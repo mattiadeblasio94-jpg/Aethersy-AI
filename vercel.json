@@ -1,0 +1,30 @@
+{
+  "functions": {
+    "pages/api/telegram.js":           { "maxDuration": 60 },
+    "pages/api/research.js":           { "maxDuration": 60 },
+    "pages/api/chat.js":               { "maxDuration": 30 },
+    "pages/api/generate-code.js":      { "maxDuration": 30 },
+    "pages/api/project.js":            { "maxDuration": 60 },
+    "pages/api/monetize.js":           { "maxDuration": 60 },
+    "pages/api/stripe-webhook.js":     { "maxDuration": 10 },
+    "pages/api/terminal.js":           { "maxDuration": 60 },
+    "pages/api/email/send.js":         { "maxDuration": 30 },
+    "pages/api/stripe/checkout.js":    { "maxDuration": 30 },
+    "pages/api/brain/upload.js":       { "maxDuration": 30 },
+    "pages/api/tools/freelance.js":    { "maxDuration": 60 },
+    "pages/api/tools/funnel.js":       { "maxDuration": 60 },
+    "pages/api/tools/contract.js":     { "maxDuration": 60 },
+    "pages/api/wiki/ingest.js":        { "maxDuration": 60 },
+    "pages/api/wiki/query.js":         { "maxDuration": 30 },
+    "pages/api/wiki/lint.js":          { "maxDuration": 60 },
+    "pages/api/studio/image.js":       { "maxDuration": 60 },
+    "pages/api/studio/video.js":       { "maxDuration": 30 },
+    "pages/api/studio/music.js":       { "maxDuration": 30 },
+    "pages/api/studio/voice.js":       { "maxDuration": 30 },
+    "pages/api/studio/poll.js":        { "maxDuration": 15 },
+    "pages/api/cinema/generate.js":    { "maxDuration": 60 },
+    "pages/api/cinema/status.js":      { "maxDuration": 15 },
+    "pages/api/wiki/upload.js":        { "maxDuration": 30 },
+    "pages/api/tools/seo.js":          { "maxDuration": 60 }
+  }
+}

@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # Ollama AI Server (GPU-accelerated)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aethersy-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - aethersy-network
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: aethersy-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
+    networks:
+      - aethersy-network
+
+  # PostgreSQL - Dati strutturati
+  postgres:
+    image: postgres:16-alpine
+    container_name: aethersy-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: aethersy
+      POSTGRES_PASSWORD: aethersy_secure_password_2026
+      POSTGRES_DB: aethersy_main
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - aethersy-network
+
+  # Redis - Caching e sessioni
+  redis:
+    image: redis:7-alpine
+    container_name: aethersy-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass aethersy_redis_password_2026
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - aethersy-network
+
+  # Backend API (Node.js)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aethersy-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - CHROMA_HOST=http://chromadb:8000
+      - DATABASE_URL=postgresql://aethersy:aethersy_secure_password_2026@postgres:5432/aethersy_main
+      - REDIS_URL=redis://:aethersy_redis_password_2026@redis:6379
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    volumes:
+      - ./backend:/app
+      - backend_uploads:/app/uploads
+    depends_on:
+      - ollama
+      - chromadb
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - aethersy-network
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: aethersy-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://backend:5000
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - aethersy-network
+
+volumes:
+  ollama_data:
+  chroma_data:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+
+networks:
+  aethersy-network:
+    driver: bridge

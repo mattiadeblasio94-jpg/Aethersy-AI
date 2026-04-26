@@ -1,0 +1,53 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="200" r="180" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.3"/>
+  <circle cx="200" cy="200" r="170" fill="none" stroke="url(#grad2)" stroke-width="1" opacity="0.2"/>
+
+  <!-- Central AI brain/core -->
+  <ellipse cx="200" cy="200" rx="60" ry="70" fill="none" stroke="url(#grad1)" stroke-width="3" filter="url(#glow)"/>
+  <ellipse cx="200" cy="200" rx="40" ry="50" fill="none" stroke="url(#grad2)" stroke-width="2" opacity="0.8"/>
+  <ellipse cx="200" cy="200" rx="20" ry="30" fill="url(#grad1)" opacity="0.6"/>
+
+  <!-- Orbiting electrons/nodes -->
+  <circle cx="200" cy="80" r="8" fill="url(#grad1)" filter="url(#glow)"/>
+  <circle cx="320" cy="200" r="8" fill="url(#grad2)" filter="url(#glow)"/>
+  <circle cx="200" cy="320" r="8" fill="url(#grad1)" filter="url(#glow)"/>
+  <circle cx="80" cy="200" r="8" fill="url(#grad2)" filter="url(#glow)"/>
+
+  <!-- Connection lines -->
+  <path d="M200 80 L200 130" stroke="url(#grad1)" stroke-width="1.5" opacity="0.5"/>
+  <path d="M320 200 L260 200" stroke="url(#grad2)" stroke-width="1.5" opacity="0.5"/>
+  <path d="M200 270 L200 320" stroke="url(#grad1)" stroke-width="1.5" opacity="0.5"/>
+  <path d="M140 200 L80 200" stroke="url(#grad2)" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Diagonal orbit rings -->
+  <ellipse cx="200" cy="200" rx="100" ry="40" fill="none" stroke="url(#grad1)" stroke-width="1" opacity="0.3" transform="rotate(45 200 200)"/>
+  <ellipse cx="200" cy="200" rx="100" ry="40" fill="none" stroke="url(#grad2)" stroke-width="1" opacity="0.3" transform="rotate(-45 200 200)"/>
+
+  <!-- Corner accents -->
+  <path d="M40 40 L70 40 L70 55" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.4"/>
+  <path d="M360 40 L330 40 L330 55" fill="none" stroke="url(#grad2)" stroke-width="2" opacity="0.4"/>
+  <path d="M40 360 L70 360 L70 345" fill="none" stroke="url(#grad2)" stroke-width="2" opacity="0.4"/>
+  <path d="M360 360 L330 360 L330 345" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.4"/>
+
+  <!-- Aethersy text -->
+  <text x="200" y="375" text-anchor="middle" fill="url(#grad1)" font-family="system-ui, sans-serif" font-size="24" font-weight="700" letter-spacing="3">AETHERSY</text>
+</svg>
