@@ -442,7 +442,7 @@ export class CinemaStudio {
 
     // Aggiungi dettagli lighting
     if (lighting && LIGHTING_PRESETS[lighting]) {
-      const l = LIGHTING_PRESETS[lighting]
+      const l = LIGHTING_PRESETS[lighting] as any
       enhanced += `, ${l.type} lighting, ${l.kelvinTemperature}K color temperature`
       if (l.volumetric?.enabled) {
         enhanced += ', volumetric lighting, god rays, atmospheric'
