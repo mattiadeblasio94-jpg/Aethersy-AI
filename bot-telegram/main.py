@@ -968,10 +968,32 @@ async def post_init(application: Application):
         ('email', 'Invia email tramite Mailerlite'),
     ])
 
+async def health_check_server():
+    """
+    Health check server per Render (porta 8000)
+    """
+    from aiohttp import web
+
+    async def health(request):
+        return web.Response(text="OK")
+
+    app = web.Application()
+    app.router.add_get('/health', health)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8000)
+    await site.start()
+    print("🏥 Health check attivo su porta 8000")
+
+    return runner
+
 def main():
     """
     Avvio principale - OFFICIAL BOT MODE
     """
+    import asyncio
+
     # Crea application
     application = Application.builder().token(BOT_TOKEN).build()
 
@@ -996,6 +1018,13 @@ def main():
 
     # Post-init per set comandi
     application.post_init = post_init
+
+    async def post_init_wrapper(app):
+        await post_init(app)
+        # Avvia health check server
+        await health_check_server()
+
+    application.post_init = post_init_wrapper
 
     # Avvia polling
     print("🚀 Aethersy-AI — Telegram Official Bot")

@@ -1,42 +1,102 @@
-# Bot Telegram Aethersy-AI - Deploy su Railway
+# Aethersy-AI - Deploy Bot Telegram su Render
 
-## Problema risolto
+## Configurazione Render.com
 
-Il Dockerfile nella root punta a `bot-telegram/` così Railway può vedere e buildare il bot.
+Il bot è configurato per Render.com con health check integrato.
 
-## Variabili d'ambiente da configurare su Railway
+### 1. Collega il Repository
 
-Vai su Railway → Progetto → Variables e aggiungi:
+1. Vai su https://dashboard.render.com
+2. **New +** → **Web Service**
+3. Connetti il repository GitHub: `mattiadeblasio94-jpg/Aethersy-AI`
+4. Configura:
+   - **Name:** `aethersy-telegram-bot`
+   - **Region:** Oregon (più vicino all'Italia)
+   - **Branch:** `master`
+   - **Root Directory:** `bot-telegram`
+   - **Runtime:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `python main.py`
 
-| Nome | Valore |
-|------|--------|
+### 2. Variabili d'Ambiente (Environment)
+
+Aggiungi queste variabili nella sezione **Environment** del servizio:
+
+| Key | Value |
+|-----|-------|
 | `TELEGRAM_BOT_TOKEN` | `8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM` |
 | `LARA_WEBHOOK_URL` | `https://aethersy.com/api/lara/chat` |
-| `NEXT_PUBLIC_APP_URL` | `https://aethersy.com` |
 | `MAILERLITE_WEBHOOK_ID` | `fLJ2J3tSXO` |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://heydnqkuwvtbenpougno.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | (la tua chiave Supabase) |
+| `SUPABASE_SERVICE_ROLE_KEY` | *(la tua chiave Supabase)* |
 | `ADMIN_TELEGRAM_ID` | `8074643162` |
 
-## Dopo aver configurato le variabili
+### 3. Deploy
 
-1. Railway rileverà automaticamente il Dockerfile
-2. Il bot si deployerà in ~2 minuti
-3. Controlla i log per verificare l'avvio
-4. Testa il bot su Telegram: `@Lara_Aethersy_AI_bot`
+1. Clicca **Advanced** → **Auto-Deploy:** ✅ Enabled
+2. Clicca **Create Web Service**
+3. Attendere il deploy (~2-3 minuti)
 
-## Comandi per testare il bot
+### 4. Verifica
 
+Dopo il deploy:
+
+1. **Health Check:** `https://aethersy-telegram-bot.onrender.com/health` → Deve rispondere "OK"
+2. **Log:** Controlla i log nella dashboard Render
+3. **Telegram:** Cerca `@Lara_Aethersy_AI_bot` e premi `/start`
+
+### 5. Outbound IP
+
+Render usa IP condivisi. Se devi whitelistare:
 ```
-/start - Inizia conversazione
-/help - Guida completa
-/status - Verifica piano
-/email - Invia email
+74.220.48.0/24
+74.220.56.0/24
 ```
 
-## Se il deploy fallisce
+## Comandi Bot
 
-1. Controlla i log su Railway
-2. Verifica che tutte le variabili siano impostate
-3. Assicurati che il token bot sia corretto
-4. Triggera un redeploy manuale (Deploy → Redeploy)
+| Comando | Descrizione |
+|---------|-------------|
+| `/start` | Inizia conversazione |
+| `/status` | Verifica piano e limiti |
+| `/upgrade` | Link upgrade piano |
+| `/help` | Guida completa |
+| `/reset` | Reset conversazione |
+| `/email` | Invia email tramite Mailerlite |
+
+### Admin Commands
+
+| Comando | Descrizione |
+|---------|-------------|
+| `/stats` | Statistiche sistema |
+| `/user [email]` | Dettagli utente |
+| `/package [email] [pkg]` | Assegna pacchetto |
+| `/alerts` | Gestisci notifiche |
+
+## Troubleshooting
+
+### Bot non risponde
+1. Controlla i log su Render
+2. Verifica che `TELEGRAM_BOT_TOKEN` sia corretto
+3. Testa: `curl https://api.telegram.org/bot<TOKEN>/getMe`
+
+### Health check fallisce
+- Il bot deve essere in esecuzione
+- Controlla `journalctl` o log Render
+
+### Errori Lara API
+- Verifica che `LARA_WEBHOOK_URL` sia raggiungibile
+- Controlla che la piattaforma Vercel sia attiva
+
+## Aggiornamenti
+
+Con **Auto-Deploy** attivo, ogni push su `master` deploya automaticamente il bot.
+
+Per deploy manuale:
+1. Dashboard Render → Il tuo servizio
+2. **Manual Deploy** → **Clear build cache & deploy**
+
+---
+
+**Piattaforma Web:** https://aethersy.com (Vercel)
+**Bot Telegram:** @Lara_Aethersy_AI_bot (Render)
