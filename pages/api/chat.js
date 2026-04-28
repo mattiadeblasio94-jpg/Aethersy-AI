@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { saveMessage, getHistory } from '../../lib/memory';
 import { getAllPages } from '../../lib/wiki';
 import { ollamaChatStream } from '../../lib/ollama';
@@ -7,11 +6,8 @@ import { LARA_SYSTEM_PROMPT } from '../../lib/prompts/lara';
 
 export const config = { api: { bodyParser: true, responseLimit: false } };
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const SYSTEM = process.env.USE_OLLAMA === 'true'
-  ? LARA_SYSTEM_PROMPT
-  : `Sei Lara, l'AI agent di Aethersy-AI — intelligente, diretta e super competente.
+// ONLY OPEN SOURCE - Ollama primary
+const SYSTEM = LARA_SYSTEM_PROMPT || `Sei Lara, l'AI agent di Aethersy-AI — intelligente, diretta e super competente.
 Rispondi sempre in italiano a meno che l'utente scriva in un'altra lingua.
 Sei esperta di: business, marketing, AI, codice, finanza, SEO, automazione, strategia.
 Usa markdown per formattare (liste, bold, titoli, codice) quando rende la risposta più chiara.
@@ -49,8 +45,8 @@ export default async function handler(req, res) {
     { role: 'user', content: message + wikiContext },
   ];
 
-  // ── OLLAMA STREAMING ─────────────────────────────────────────────────────────
-  if (streaming && (useOllama || process.env.USE_OLLAMA === 'true')) {
+  // ── OLLAMA STREAMING (PRIMARY) ─────────────────────────────────────────────────
+  if (streaming) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
@@ -93,64 +89,37 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── CLAUDE Streaming mode (default) ───────────────────────────────────────────────
-  if (streaming) {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders?.();
-
-    try {
-      const stream = await client.messages.stream({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 3000,
-        system: SYSTEM,
-        messages,
-      });
-
-      let fullReply = '';
-
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-          fullReply += event.delta.text;
-          res.write(`data: ${JSON.stringify({ t: event.delta.text })}\n\n`);
-        }
-      }
-
-      // Save to memory after complete
-      try {
-        await Promise.all([
-          saveMessage(sid, 'user', message),
-          saveMessage(sid, 'assistant', fullReply),
-        ]);
-      } catch {}
-
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
-    } catch (e) {
-      res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
-      res.end();
-    }
-    return;
-  }
-
   // ── Non-streaming fallback ─────────────────────────────────────────────────
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
-      system: SYSTEM,
-      messages,
+    const detectedTask = detectTaskFromMessage(message);
+    const selectedModel = selectModelForTask(detectedTask);
+
+    const ollamaMessages = [
+      { role: 'system', content: SYSTEM },
+      ...messages,
+    ];
+
+    const res = await fetch(`${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: selectedModel,
+        prompt: messages[messages.length - 1].content,
+        stream: false,
+      }),
     });
-    const reply = response.content[0].text;
+
+    const data = await res.json();
+    const reply = data.response;
+
     try {
       await Promise.all([
         saveMessage(sid, 'user', message),
         saveMessage(sid, 'assistant', reply),
       ]);
     } catch {}
-    return res.json({ reply, sessionId: sid });
+
+    return res.json({ reply, sessionId: sid, model: selectedModel });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

@@ -2,5 +2,13 @@ node_modules/
 .next/
 .env.local
 .env*.local
+.env
+.env.production
+.env.server
 
 .vercel
+
+*.pem
+bot-telegram/.env
+bot-telegram/*.session
+bot-telegram/*.session-journal
