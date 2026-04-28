@@ -2,9 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import { motion } from 'framer-motion';
+import LiveAnalytics from '../components/LiveAnalytics';
 
 const BOT_URL = 'https://t.me/Lara_Aethersy_Bot';
 const BOT_NAME = 'Lara AGENTE AI Aethersy';
+const OPENCLAW_URL = 'http://47.87.134.105:3000'; // OpenClaw Gateway su Alibaba ECS
+const OPENCLAW_LOCAL_URL = 'http://127.0.0.1:18789'; // OpenClaw SSH tunnel locale
+
+// Social Media Links
+const SOCIAL_LINKS = [
+  { id: 'instagram', label: 'Instagram', icon: '📸', url: 'https://instagram.com' },
+  { id: 'facebook', label: 'Facebook', icon: '📘', url: 'https://facebook.com' },
+  { id: 'tiktok', label: 'TikTok', icon: '🎵', url: 'https://tiktok.com' },
+  { id: 'linkedin', label: 'LinkedIn', icon: '💼', url: 'https://linkedin.com' },
+  { id: 'twitter', label: 'X/Twitter', icon: '🐦', url: 'https://twitter.com' },
+  { id: 'reddit', label: 'Reddit', icon: '🤖', url: 'https://reddit.com' },
+  { id: 'youtube', label: 'YouTube', icon: '📺', url: 'https://youtube.com' },
+  { id: 'pinterest', label: 'Pinterest', icon: '📌', url: 'https://pinterest.com' },
+  { id: 'snapchat', label: 'Snapchat', icon: '👻', url: 'https://snapchat.com' },
+  { id: 'twitch', label: 'Twitch', icon: '🎮', url: 'https://twitch.tv' },
+];
 
 async function safeJson(r) {
   const t = await r.text();
@@ -186,7 +204,35 @@ export default function Dashboard() {
       </aside>
 
       {/* Main */}
-      <main style={css.main}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <main style={{ ...css.main, width: '100%', maxWidth: '100%' }}>
+        {/* TOP TOOLBAR */}
+        <div style={css.topToolbar}>
+          <div style={css.toolbarSection}>
+            <a href={OPENCLAW_URL} target="_blank" rel="noopener noreferrer" style={css.toolbarBtn('#3b82f6')}>
+              <span>🔧</span> <span>OpenClaw</span>
+            </a>
+            <div style={css.toolbarDivider}></div>
+            {/* Social Media Scroll */}
+            <div style={css.socialScroll}>
+              {SOCIAL_LINKS.map(social => (
+                <a key={social.id} href={social.url} target="_blank" rel="noopener noreferrer" style={css.socialBtn} title={social.label}>
+                  {social.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+          <div style={css.toolbarSection}>
+            <SettingsDropdown user={user} />
+            <Link href="/pricing" style={css.toolbarBtn('#10b981')}>
+              <span>💎</span> <span>Piani</span>
+            </Link>
+            <a href={BOT_URL} target="_blank" rel="noopener noreferrer" style={css.toolbarBtn('#7c3aed')}>
+              <span>📱</span> <span>Telegram</span>
+            </a>
+          </div>
+        </div>
+
         <header style={css.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <span style={{ fontSize: '1.3rem' }}>{current?.icon}</span>
@@ -195,10 +241,6 @@ export default function Dashboard() {
           <div style={{ display: 'flex', gap: '0.7rem', alignItems: 'center' }}>
             {user && <span style={css.userBadge}>👤 {user.name}</span>}
             <SubscriptionButton email={user?.email} plan={user?.plan} />
-            <Link href="/pricing" style={css.pricingBadge}>🚀 Piani</Link>
-            <a href={BOT_URL} target="_blank" rel="noopener noreferrer" style={css.tgBadge}>
-              <TgIcon /> <span style={{ marginLeft: 4 }}>{BOT_NAME}</span>
-            </a>
           </div>
         </header>
 
@@ -219,6 +261,9 @@ export default function Dashboard() {
           {tool === 'competitor'&& <CompetitorPanel />}
         </div>
       </main>
+
+      {/* Live Analytics Panel - Right Sidebar */}
+      <LiveAnalytics />
     </div>
   );
 }
@@ -1565,6 +1610,137 @@ function getPlanBadgeColor(plan) {
   }
 }
 
+// ============================================
+// SETTINGS DROPDOWN WITH LANGUAGE & USER CONTROL
+// ============================================
+function SettingsDropdown({ user }) {
+  const [open, setOpen] = useState(false);
+  const [lang, setLang] = useState('it');
+
+  const languages = [
+    { code: 'it', label: '🇮🇹 Italiano' },
+    { code: 'en', label: '🇬🇧 English' },
+    { code: 'es', label: '🇪🇸 Español' },
+    { code: 'fr', label: '🇫🇷 Français' },
+    { code: 'de', label: '🇩🇪 Deutsch' },
+    { code: 'pt', label: '🇵🇹 Português' },
+    { code: 'zh', label: '🇨🇳 中文' },
+    { code: 'ja', label: '🇯🇵 日本語' },
+  ];
+
+  function handleLogout() {
+    localStorage.removeItem('aiforge_user');
+    localStorage.removeItem('aiforge_token');
+    window.location.href = '/';
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ ...css.toolbarBtn('#64748b'), background: open ? 'rgba(100,116,139,0.2)' : '' }}
+      >
+        <span>⚙️</span> <span>Impostazioni</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '0.5rem',
+          background: '#1e293b',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 12,
+          padding: '0.75rem',
+          minWidth: 280,
+          zIndex: 1000,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+        }}>
+          {/* Language Selector */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>🌍 Lingua</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+              {languages.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => { setLang(l.code); setOpen(false); }}
+                  style={{
+                    background: lang === l.code ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
+                    border: lang === l.code ? '1px solid #7c3aed' : '1px solid rgba(255,255,255,0.05)',
+                    color: lang === l.code ? '#a78bfa' : '#94a3b8',
+                    borderRadius: 8,
+                    padding: '0.5rem',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* User Info */}
+          {user && (
+            <>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>👤 Utente</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  {user.avatar && <img src={user.avatar} alt="" style={{ width: 32, height: 32, borderRadius: '50%' }} />}
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#f1f5f9' }}>{user.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{user.email}</div>
+                  </div>
+                </div>
+                <Link
+                  href="/admin"
+                  style={{
+                    display: 'block',
+                    background: 'rgba(124,58,237,0.2)',
+                    border: '1px solid rgba(124,58,237,0.3)',
+                    color: '#a78bfa',
+                    borderRadius: 8,
+                    padding: '0.5rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    marginBottom: '0.5rem'
+                  }}
+                >
+                  🔑 Pannello Admin
+                </Link>
+              </div>
+
+              {/* Account Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    color: '#f87171',
+                    borderRadius: 8,
+                    padding: '0.5rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  🚪 Logout
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const css = {
   root: { display: 'flex', height: '100vh', background: '#0a0a0f', color: '#f1f5f9', overflow: 'hidden', fontFamily: "'Inter',system-ui,sans-serif" },
   sidebar: { background: '#0d0d16', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', transition: 'width 0.25s', overflow: 'hidden', flexShrink: 0 },
@@ -1600,4 +1776,75 @@ const css = {
   srcCard: { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '0.85rem', display: 'block', textDecoration: 'none' },
   finCard: { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '1.2rem' },
   sectionLabel: { color: '#94a3b8', fontSize: '0.88rem', fontWeight: 600, marginBottom: '0.8rem', marginTop: 0 },
+
+  // TOP TOOLBAR STYLES
+  topToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0.75rem 1.5rem',
+    background: 'rgba(13,13,22,0.8)',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    gap: '1rem',
+    flexShrink: 0
+  },
+  toolbarSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem'
+  },
+  toolbarBtn: (color) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    background: `rgba(${hexToRgb(color)},0.1)`,
+    border: `1px solid rgba(${hexToRgb(color)},0.2)`,
+    color: color,
+    borderRadius: 8,
+    padding: '0.4rem 0.75rem',
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  }),
+  toolbarDivider: {
+    width: '1px',
+    height: '24px',
+    background: 'rgba(255,255,255,0.1)'
+  },
+  socialScroll: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    overflowX: 'auto',
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(124,58,237,0.3) transparent',
+    maxWidth: '400px',
+    padding: '0.25rem'
+  },
+  socialBtn: {
+    fontSize: '1.2rem',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    padding: '0.35rem',
+    cursor: 'pointer',
+    textDecoration: 'none',
+    transition: 'all 0.2s',
+    flexShrink: 0,
+    ':hover': {
+      background: 'rgba(124,58,237,0.2)',
+      borderColor: 'rgba(124,58,237,0.4)'
+    }
+  }
 };
+
+// Helper per convertire hex a rgb
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : '100, 116, 139';
+}

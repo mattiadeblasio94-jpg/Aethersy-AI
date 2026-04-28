@@ -1,12 +1,17 @@
 import { getStripeInstance } from '../../../lib/stripe';
 import { verifyToken } from '../../../lib/auth';
-import { Redis } from '@upstash/redis';
 
-function getRedis() {
-  const url = (process.env.UPSTASH_REDIS_REST_URL || '').trim();
-  const token = (process.env.UPSTASH_REDIS_REST_TOKEN || '').trim();
-  return new Redis({ url, token });
-}
+// Price IDs da environment variables (configurati in .env.production)
+const PRICE_IDS = {
+  pro: {
+    monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || 'price_1TPZeWLhc53TBuBk731c94gW',
+    annual: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || 'price_1TPZeXLhc53TBuBkg6BvcrPz',
+  },
+  business: {
+    monthly: process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID || 'price_1TPZeYLhc53TBuBkOJkcNtcO',
+    annual: process.env.STRIPE_BUSINESS_ANNUAL_PRICE_ID || 'price_1TPZeZLhc53TBuBk1kn5Vesk',
+  },
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -20,18 +25,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Piano non valido' });
   }
 
-  // Get price IDs from Redis config (set via admin panel)
-  const r = getRedis();
-  const configKey = `config:stripe:${plan}${annual ? ':annual' : ':monthly'}PriceId`;
-  const priceId = await r.get(configKey);
-
-  if (!priceId) {
-    return res.status(400).json({
-      error: `Price ID non configurato per ${plan} ${annual ? 'annuale' : 'mensile'}. Configuralo in /admin.`
-    });
+  // Enterprise: redirect to email
+  if (plan === 'enterprise') {
+    return res.status(200).json({ url: 'mailto:mattiadeblasio94@gmail.com?subject=Enterprise%20Aethersy-AI' });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aethersy-ai-mattiadeblasio94-8016s-projects.vercel.app';
+  // Get price ID from env config
+  const priceId = PRICE_IDS[plan]?.[annual ? 'annual' : 'monthly'];
+
+  if (!priceId) {
+    return res.status(400).json({ error: `Price ID non configurato per ${plan}` });
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aethersy.com';
 
   try {
     const stripe = getStripeInstance();
@@ -42,7 +48,7 @@ export default async function handler(req, res) {
       customer_email: decoded.email,
       metadata: { email: decoded.email, plan, annual: String(annual) },
       success_url: `${appUrl}/dashboard?upgraded=1&plan=${plan}`,
-      cancel_url: `${appUrl}/#pricing`,
+      cancel_url: `${appUrl}/pricing`,
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
       subscription_data: {

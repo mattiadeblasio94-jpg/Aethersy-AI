@@ -4,6 +4,32 @@ import Link from 'next/link';
 
 const BOT_USERNAME = 'Lara_Aethersy_Bot';
 const BOT_URL = `https://t.me/${BOT_USERNAME}`;
+const OPENCLAW_URL = 'http://47.87.134.105:3000';
+
+// Social Media Links
+const SOCIAL_LINKS = [
+  { id: 'instagram', label: 'Instagram', icon: '📸', url: 'https://instagram.com' },
+  { id: 'facebook', label: 'Facebook', icon: '📘', url: 'https://facebook.com' },
+  { id: 'tiktok', label: 'TikTok', icon: '🎵', url: 'https://tiktok.com' },
+  { id: 'linkedin', label: 'LinkedIn', icon: '💼', url: 'https://linkedin.com' },
+  { id: 'twitter', label: 'X/Twitter', icon: '🐦', url: 'https://twitter.com' },
+  { id: 'reddit', label: 'Reddit', icon: '🤖', url: 'https://reddit.com' },
+  { id: 'youtube', label: 'YouTube', icon: '📺', url: 'https://youtube.com' },
+  { id: 'pinterest', label: 'Pinterest', icon: '📌', url: 'https://pinterest.com' },
+  { id: 'snapchat', label: 'Snapchat', icon: '👻', url: 'https://snapchat.com' },
+  { id: 'twitch', label: 'Twitch', icon: '🎮', url: 'https://twitch.tv' },
+];
+
+const LANGUAGES = [
+  { code: 'IT', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'EN', label: 'English', flag: '🇬🇧' },
+  { code: 'ES', label: 'Español', flag: '🇪🇸' },
+  { code: 'FR', label: 'Français', flag: '🇫🇷' },
+  { code: 'DE', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'PT', label: 'Português', flag: '🇵🇹' },
+  { code: 'ZH', label: '中文', flag: '🇨🇳' },
+  { code: 'JA', label: '日本語', flag: '🇯🇵' },
+];
 
 const TOOLS = [
   { icon: '🔍', title: 'Ricerca Web AI', desc: 'Ricerca su internet in tempo reale con sintesi AI e citazioni verificate. Fonti: Google, Reddit, ArXiv, PubMed.' },
@@ -90,6 +116,8 @@ export default function Home() {
   const [annual, setAnnual] = useState(false);
   const [faqOpen, setFaqOpen] = useState(null);
   const [checkoutLoading, setCheckoutLoading] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [language, setLanguage] = useState('IT');
 
   useEffect(() => {
     try {
@@ -219,10 +247,72 @@ export default function Home() {
         .nav-link { color: #94a3b8; font-size: 0.9rem; transition: color 0.2s; }
         .nav-link:hover { color: #fff; }
         .shimmer-text { background: linear-gradient(90deg, #7c3aed, #a78bfa, #06b6d4, #a78bfa, #7c3aed); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 4s linear infinite; }
+
+        /* Toolbar Styles */
+        .toolbar { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 3rem', background: 'rgba(6,6,17,0.95)', borderBottom: '1px solid rgba(124,58,237,0.2)', position: 'sticky', top: 0, zIndex: 101, backdropFilter: 'blur(20px)' }
+        .toolbarLeft { display: 'flex', alignItems: 'center', gap: '1rem' }
+        .openclawBtn { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.4)', borderRadius: 8, color: '#22d3ee', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }
+        .openclawBtn:hover { background: 'rgba(6,182,212,0.25)' }
+        .socialScroll { display: 'flex', gap: '0.8rem', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '0.3rem 0' }
+        .socialScroll::-webkit-scrollbar { display: 'none' }
+        .socialBtn { display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.7rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, color: '#94a3b8', fontSize: '0.75rem', whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.2s' }
+        .socialBtn:hover { background: 'rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.4)', color: '#a78bfa' }
+        .settingsBtn { display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#94a3b8', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }
+        .settingsBtn:hover { background: 'rgba(124,58,237,0.15)', color: '#a78bfa' }
+        .dropdown { position: 'relative' }
+        .dropdownMenu { position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', background: 'rgba(6,6,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '0.8rem', minWidth: '280px', boxShadow: '0 10px 40px rgba(0,0,0,0.4)', zIndex: 102 }
+        .langGrid { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }
+        .langBtn { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem', padding: '0.4rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, color: '#94a3b8', fontSize: '0.7rem', cursor: 'pointer', transition: 'all 0.2s' }
+        .langBtn:hover, .langBtn.active { background: 'rgba(124,58,237,0.2)', borderColor: 'rgba(124,58,237,0.4)', color: '#a78bfa' }
+        .userPanel { marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(255,255,255,0.06)' }
+        .userPanel p { fontSize: '0.8rem', color: '#64748b', marginBottom: '0.4rem' }
+        .panelBtn { display: 'block', width: '100%', padding: '0.5rem', marginTop: '0.4rem', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 6, color: '#a78bfa', fontSize: '0.8rem', textAlign: 'center', cursor: 'pointer' }
       `}</style>
 
+      {/* TOOLBAR */}
+      <div className="toolbar">
+        <div className="toolbarLeft">
+          <a href={OPENCLAW_URL} target="_blank" rel="noopener noreferrer" className="openclawBtn">
+            🔗 OpenClaw Gateway
+          </a>
+          <div className="socialScroll">
+            {SOCIAL_LINKS.map(s => (
+              <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="socialBtn">
+                {s.icon} {s.label}
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="dropdown">
+          <button className="settingsBtn" onClick={() => setSettingsOpen(!settingsOpen)}>
+            ⚙️ Impostazioni
+          </button>
+          {settingsOpen && (
+            <div className="dropdownMenu">
+              <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>LINGUA</p>
+              <div className="langGrid">
+                {LANGUAGES.map(l => (
+                  <button key={l.code} className={`langBtn ${language === l.code ? 'active' : ''}`} onClick={() => { setLanguage(l.code); setSettingsOpen(false); }}>
+                    <span style={{ fontSize: '1.2rem' }}>{l.flag}</span>
+                    <span>{l.code}</span>
+                  </button>
+                ))}
+              </div>
+              {user && (
+                <div className="userPanel">
+                  <p>Account: {user.name}</p>
+                  <Link href="/dashboard" className="panelBtn">📊 Dashboard</Link>
+                  <Link href="/admin" className="panelBtn">🔧 Admin</Link>
+                  <button onClick={logout} className="panelBtn" style={{ background: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' }}>Esci</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* NAV */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 3rem', background: 'rgba(6,6,17,0.8)', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(20px)' }}>
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 3rem', background: 'rgba(6,6,17,0.8)', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0, zIndex: 99, backdropFilter: 'blur(20px)' }}>
         <Link href="/" style={{ fontSize: '1.35rem', fontWeight: 900, background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           ⚡ Aethersy-AI
         </Link>

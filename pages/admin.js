@@ -3,11 +3,22 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 
 const ADMIN_EMAIL = 'mattiadeblasio94@gmail.com';
+const STRIPE_URL = '/api/stripe-webhook';
 
 async function safeJson(r) {
   const t = await r.text();
   try { return JSON.parse(t); } catch { return { error: `Errore: ${t.slice(0, 100)}` }; }
 }
+
+// Metriche e KPI
+const KPIS = [
+  { id: 'revenue', label: 'Revenue MRR', icon: '💰', color: '#10b981' },
+  { id: 'users', label: 'Utenti Totali', icon: '👥', color: '#3b82f6' },
+  { id: 'active', label: 'Utenti Attivi (7g)', icon: '📈', color: '#8b5cf6' },
+  { id: 'churn', label: 'Churn Rate', icon: '📉', color: '#f59e0b' },
+  { id: 'credits', label: 'Crediti Venduti', icon: '💎', color: '#06b6d4' },
+  { id: 'api', label: 'API Calls (oggi)', icon: '⚡', color: '#ec4899' },
+];
 
 export default function AdminPanel() {
   const router = useRouter();
@@ -277,7 +288,8 @@ export default function AdminPanel() {
   const tabs = [
     { id: 'overview', label: 'Panoramica', icon: '📊' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
-    { id: 'financial', label: 'Revenue', icon: '💰' },
+    { id: 'financial', label: 'Revenue & Stripe', icon: '💰' },
+    { id: 'usage', label: 'Usage & Costi', icon: '⚡' },
     { id: 'users', label: 'Utenti', icon: '👥' },
     { id: 'grants', label: 'Accessi', icon: '🔑' },
     { id: 'requests', label: 'Richieste', icon: '⏳' },
@@ -514,6 +526,112 @@ export default function AdminPanel() {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* USAGE & COSTI TAB */}
+        {activeTab === 'usage' && (
+          <div>
+            <h2 style={styles.pageTitle}>⚡ Usage & Costi Operativi</h2>
+
+            {/* API Usage Overview */}
+            <div style={styles.metricsGrid}>
+              <MetricCard
+                title="API Calls (Oggi)"
+                value={analytics?.apiCalls?.today?.toLocaleString() || '0'}
+                icon="⚡"
+                color="#ec4899"
+                trend="+15%"
+              />
+              <MetricCard
+                title="Token Generati"
+                value={(analytics?.tokens?.today / 1000000).toFixed(1) + 'M'}
+                icon="🔤"
+                color="#8b5cf6"
+              />
+              <MetricCard
+                title="Costo API (Oggi)"
+                value={`$${(analytics?.apiCosts?.today || 0).toFixed(2)}`}
+                icon="💸"
+                color="#f59e0b"
+              />
+              <MetricCard
+                title="Crediti Consumati"
+                value={analytics?.credits?.consumed?.toLocaleString() || '0'}
+                icon="💎"
+                color="#06b6d4"
+              />
+            </div>
+
+            {/* Costo per Utente */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>📊 Costo per Utente (Ultimi 7 giorni)</h3>
+              <div style={styles.tableContainer}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Utente</th>
+                      <th style={styles.th}>Piano</th>
+                      <th style={styles.th}>API Calls</th>
+                      <th style={styles.th}>Token</th>
+                      <th style={styles.th}>Costo</th>
+                      <th style={styles.th}>Revenue</th>
+                      <th style={styles.th}>Margine</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.slice(0, 20).map((user, i) => {
+                      const apiCalls = user.usage?.apiCalls || 0;
+                      const tokens = user.usage?.tokens || 0;
+                      const cost = (tokens / 1000000) * 0.50; // $0.50 per 1M tokens
+                      const revenue = user.subscription?.mrr || 0;
+                      const margin = revenue - cost;
+                      return (
+                        <tr key={i} style={styles.tr}>
+                          <td style={styles.td}>{user.name || user.email}</td>
+                          <td style={styles.td}>
+                            <span style={{ ...styles.planBadge, background: getPlanColor(user.plan) }}>
+                              {(user.plan || 'free').toUpperCase()}
+                            </span>
+                          </td>
+                          <td style={styles.td}>{apiCalls.toLocaleString()}</td>
+                          <td style={styles.td}>{(tokens / 1000).toFixed(0)}K</td>
+                          <td style={{ ...styles.td, color: cost > 0 ? '#f87171' : '#94a3b8' }}>${cost.toFixed(2)}</td>
+                          <td style={styles.td}>${revenue.toFixed(2)}</td>
+                          <td style={{ ...styles.td, color: margin >= 0 ? '#34d399' : '#f87171' }}>${margin.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Usage per Servizio */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>🔧 Usage per Servizio</h3>
+              <div style={styles.usageGrid}>
+                <UsageStat label="Groq API" value={analytics?.services?.groq?.calls?.toLocaleString() || '0'} color="#10b981" sub={`$${analytics?.services?.groq?.cost?.toFixed(2) || '0'}`} />
+                <UsageStat label="Replicate" value={analytics?.services?.replicate?.calls?.toLocaleString() || '0'} color="#8b5cf6" sub={`$${analytics?.services?.replicate?.cost?.toFixed(2) || '0'}`} />
+                <UsageStat label="HuggingFace" value={analytics?.services?.hf?.calls?.toLocaleString() || '0'} color="#06b6d4" sub={`$${analytics?.services?.hf?.cost?.toFixed(2) || '0'}`} />
+                <UsageStat label="Serper" value={analytics?.services?.serper?.calls?.toLocaleString() || '0'} color="#f59e0b" sub={`$${analytics?.services?.serper?.cost?.toFixed(2) || '0'}`} />
+              </div>
+            </div>
+
+            {/* Stripe Integration Status */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>🔗 Stripe Integration</h3>
+              <div style={{ ...styles.stripeStatus, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 12, padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '2rem' }}>✅</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: '#34d399', marginBottom: '0.25rem' }}>Stripe Connesso</div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Webhook attivo • Subscription tracking enabled</div>
+                </div>
+                <a href="/api/stripe/portal" target="_blank" style={{ ...styles.btn, background: '#635bff', color: '#fff', padding: '0.5rem 1rem', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
+                  Stripe Dashboard →
+                </a>
+              </div>
             </div>
           </div>
         )}
@@ -1228,13 +1346,18 @@ const styles = {
   toggleBtn: { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0.5rem 0.7rem', cursor: 'pointer', fontSize: '1rem' },
   saveBtn: { background: 'linear-gradient(135deg,#7c3aed,#06b6d4)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.9rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },
   subsectionTitle: { fontSize: '0.8rem', color: '#64748b', marginTop: '1.2rem', marginBottom: '0.8rem', fontWeight: 600 },
+
+  // Usage & Costi styles
+  tableContainer: { overflowX: 'auto', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' },
+  stripeStatus: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderRadius: 12 },
+  btn: { display: 'inline-block', fontWeight: 600, textDecoration: 'none', borderRadius: 8, padding: '0.5rem 1rem', cursor: 'pointer', border: 'none', fontSize: '0.8rem' },
 };
 
 function getPlanColor(plan) {
   switch (plan?.toLowerCase()) {
-    case 'pro': return 'rgba(124,58,237,0.2)';
-    case 'business': return 'rgba(6,182,212,0.2)';
-    case 'enterprise': return 'rgba(245,158,11,0.2)';
-    default: return 'rgba(100,116,139,0.2)';
+    case 'pro': return 'rgba(124,58,237,0.25)';
+    case 'business': return 'rgba(6,182,212,0.25)';
+    case 'enterprise': return 'rgba(245,158,11,0.25)';
+    default: return 'rgba(100,116,139,0.25)';
   }
 }
