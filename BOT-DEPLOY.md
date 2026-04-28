@@ -11,7 +11,7 @@ Il bot è configurato per Render.com con health check integrato.
 3. Connetti il repository GitHub: `mattiadeblasio94-jpg/Aethersy-AI`
 4. Configura:
    - **Name:** `aethersy-telegram-bot`
-   - **Region:** Oregon (più vicino all'Italia)
+   - **Region:** Oregon
    - **Branch:** `master`
    - **Root Directory:** `bot-telegram`
    - **Runtime:** `Python 3`
@@ -20,7 +20,7 @@ Il bot è configurato per Render.com con health check integrato.
 
 ### 2. Variabili d'Ambiente (Environment)
 
-Aggiungi queste variabili nella sezione **Environment** del servizio:
+Aggiungi queste variabili nella sezione **Environment**:
 
 | Key | Value |
 |-----|-------|
@@ -41,13 +41,13 @@ Aggiungi queste variabili nella sezione **Environment** del servizio:
 
 Dopo il deploy:
 
-1. **Health Check:** `https://aethersy-telegram-bot.onrender.com/health` → Deve rispondere "OK"
+1. **Health Check:** `https://aethersy-telegram-bot.onrender.com/health` → Risponde "OK"
 2. **Log:** Controlla i log nella dashboard Render
 3. **Telegram:** Cerca `@Lara_Aethersy_AI_bot` e premi `/start`
 
 ### 5. Outbound IP
 
-Render usa IP condivisi. Se devi whitelistare:
+Render usa IP condivisi:
 ```
 74.220.48.0/24
 74.220.56.0/24
@@ -78,11 +78,7 @@ Render usa IP condivisi. Se devi whitelistare:
 ### Bot non risponde
 1. Controlla i log su Render
 2. Verifica che `TELEGRAM_BOT_TOKEN` sia corretto
-3. Testa: `curl https://api.telegram.org/bot<TOKEN>/getMe`
-
-### Health check fallisce
-- Il bot deve essere in esecuzione
-- Controlla `journalctl` o log Render
+3. Test: `curl https://api.telegram.org/bot<TOKEN>/getMe`
 
 ### Errori Lara API
 - Verifica che `LARA_WEBHOOK_URL` sia raggiungibile
@@ -90,7 +86,7 @@ Render usa IP condivisi. Se devi whitelistare:
 
 ## Aggiornamenti
 
-Con **Auto-Deploy** attivo, ogni push su `master` deploya automaticamente il bot.
+Con **Auto-Deploy** attivo, ogni push su `master` deploya automaticamente.
 
 Per deploy manuale:
 1. Dashboard Render → Il tuo servizio
