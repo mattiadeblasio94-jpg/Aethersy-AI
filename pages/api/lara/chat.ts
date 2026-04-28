@@ -39,8 +39,46 @@ Sei CONCRETA: dai sempre un next action eseguibile.
 Parli come una partner di business in gamba. Usi "noi" quando parli di progetti.
 Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), struttura CONTESTO → INSIGHT → AZIONE → NEXT STEP.`
 
-    // Chiama Groq con system prompt (API veloce e gratuita)
+    // Chiama Vercel AI Gateway (con fallback a Groq diretto)
+    const gatewayKey = process.env.VERCEL_AI_GATEWAY_KEY
     const groqKey = process.env.GROQ_API_KEY
+
+    if (gatewayKey) {
+      // Usa Vercel AI Gateway
+      try {
+        const gatewayRes = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${gatewayKey}`
+          },
+          body: JSON.stringify({
+            model: 'groq/llama-3.1-8b-instant',
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: message }
+            ],
+            max_tokens: 1000,
+            temperature: 0.7
+          })
+        })
+
+        if (gatewayRes.ok) {
+          const gatewayData = await gatewayRes.json()
+          return res.json({
+            response: gatewayData.choices[0].message.content,
+            session_id: sessionId,
+            success: true,
+            platform
+          })
+        }
+      } catch (gwErr: any) {
+        console.log('Gateway error:', gwErr.message)
+        // Fallback a Groq diretto
+      }
+    }
+
+    // Fallback: Chiama Groq direttamente
     if (groqKey) {
       try {
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
