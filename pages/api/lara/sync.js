@@ -238,17 +238,21 @@ export async function searchBrain(userId, query, options = {}) {
   try {
     const r = getRedis()
 
-    // Crea embedding della query (se disponibile servizio)
+    // Crea embedding della query (Ollama - open source)
     let queryEmbedding = null
     try {
-      if (process.env.OPENAI_API_KEY) {
-        const { OpenAI } = await import('openai')
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-        const embedding = await openai.embeddings.create({
-          model: 'text-embedding-3-small',
-          input: query
+      const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+      const res = await fetch(`${ollamaBaseUrl}/api/embeddings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'nomic-embed-text',
+          prompt: query
         })
-        queryEmbedding = embedding.data[0].embedding
+      })
+      if (res.ok) {
+        const data = await res.json()
+        queryEmbedding = data.embedding
       }
     } catch (e) {
       console.log('Embedding fallback:', e.message)

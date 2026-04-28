@@ -1,5 +1,5 @@
 import { MessagesDB, MemoryDB, TasksDB, LogsDB, UsersDB, supabase } from './supabase'
-import OpenAI from 'openai'
+// OPEN SOURCE ONLY - No OpenAI/Anthropic
 
 const LARA_SYSTEM_PROMPT = `
 ╔═══════════════════════════════════════════════════════════════╗
@@ -401,10 +401,8 @@ async function updateMemory(userId: string, summary?: string, preferences?: any,
 }
 
 // ============================================
-// FUNZIONE PRINCIPALE LARA AGENT
+// FUNZIONE PRINCIPALE LARA AGENT - OPEN SOURCE
 // ============================================
-
-const openaiClient = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null
 
 export async function runLaraAgent({
   userId,
@@ -433,10 +431,10 @@ export async function runLaraAgent({
   let systemWithContext = LARA_SYSTEM_PROMPT
 
   if (userContext?.settings?.memory_summary) {
-    systemWithContext += `\\n\\nCONTESTO UTENTE:\\nMemoria: ${userContext.settings.memory_summary}`
+    systemWithContext += `\n\nCONTESTO UTENTE:\nMemoria: ${userContext.settings.memory_summary}`
   }
   if (chatId) {
-    systemWithContext += `\\nChat Telegram ID: ${chatId}`
+    systemWithContext += `\nChat Telegram ID: ${chatId}`
   }
 
   // 3. Costruisci messaggi
@@ -446,85 +444,34 @@ export async function runLaraAgent({
   }
   messages.push({ role: 'user', content: userMessage })
 
-  // 4. Esegui con AI
+  // 4. Esegui con Ollama (open source)
   let response = ''
   let stepsExecuted = 0
 
   try {
-    if (openaiClient) {
-      const completion = await openaiClient.chat.completions.create({
-        model: 'gpt-4o',
-        max_tokens: 4096,
-        messages: [
-          { role: 'system', content: systemWithContext },
-          ...messages
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'searchWeb',
-              description: 'Cerca informazioni su internet',
-              parameters: {
-                type: 'object',
-                properties: {
-                  query: { type: 'string', description: 'Query di ricerca' }
-                },
-                required: ['query']
-              }
-            }
-          },
-          {
-            type: 'function',
-            function: {
-              name: 'sendTelegramMessage',
-              description: 'Invia messaggio Telegram',
-              parameters: {
-                type: 'object',
-                properties: {
-                  chat_id: { type: 'string' },
-                  message: { type: 'string' }
-                },
-                required: ['chat_id', 'message']
-              }
-            }
-          },
-          {
-            type: 'function',
-            function: {
-              name: 'replicateGenerateImage',
-              description: 'Genera immagine con AI',
-              parameters: {
-                type: 'object',
-                properties: {
-                  prompt: { type: 'string' },
-                  model: { type: 'string' },
-                  aspectRatio: { type: 'string' }
-                },
-                required: ['prompt']
-              }
-            }
-          }
-        ],
-        tool_choice: 'auto'
+    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+    const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:8b'
+
+    const res = await fetch(`${ollamaBaseUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        prompt: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+        system: systemWithContext,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_predict: 4096
+        }
       })
+    })
 
-      const choice = completion.choices[0]
+    if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
+    const data = await res.json()
+    response = data.response
 
-      if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-        // Esegui tools
-        const toolResults = []
-        for (const toolCall of choice.message.tool_calls) {
-          const fn = (toolCall as any).function?.name || (toolCall as any).name
-          const args = JSON.parse((toolCall as any).function?.arguments || (toolCall as any).arguments || '{}')
-
-          let result: any
-          if (fn === 'searchWeb') result = await searchWeb(args.query)
-          else if (fn === 'sendTelegramMessage') result = await sendTelegramMessage(args.chat_id, args.message)
-          else if (fn === 'replicateGenerateImage') result = await replicateGenerateImage(args.prompt, args.model, args.aspectRatio)
-          else result = { error: 'Tool non supportato' }
-
-          toolResults.push({ role: 'tool', content: JSON.stringify(result), tool_call_id: toolCall.id })
+    stepsExecuted = 1
           stepsExecuted++
         }
 

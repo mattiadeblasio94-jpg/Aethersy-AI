@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+// OPEN SOURCE ONLY - No OpenAI
 
 // ============================================
 // TEMPLATE DATABASE - 500+ TEMPLATE REALI

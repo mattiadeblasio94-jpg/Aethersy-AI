@@ -44,17 +44,13 @@ export async function checkTelegram(): Promise<boolean> {
   }
 }
 
-export async function checkOpenAI(): Promise<boolean> {
+export async function checkOllama(): Promise<boolean> {
   try {
-    const token = process.env.OPENAI_API_KEY
-    if (!token) return false
-
-    const res = await fetch('https://api.openai.com/v1/models', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+    const res = await fetch(`${ollamaBaseUrl}/api/tags`)
     return res.ok
   } catch (e) {
-    console.log('OpenAI health check failed:', e)
+    console.log('Ollama health check failed:', e)
     return false
   }
 }
