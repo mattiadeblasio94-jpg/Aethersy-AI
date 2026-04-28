@@ -470,29 +470,7 @@ export async function runLaraAgent({
     if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
     const data = await res.json()
     response = data.response
-
     stepsExecuted = 1
-          stepsExecuted++
-        }
-
-        // Seconda chiamata per ottenere risposta finale
-        const finalCompletion = await openaiClient.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: systemWithContext },
-            ...messages,
-            { role: 'assistant', content: null, tool_calls: choice.message.tool_calls },
-            ...toolResults
-          ]
-        })
-        response = finalCompletion.choices[0].message.content || ''
-      } else {
-        response = choice.message.content || ''
-      }
-    } else {
-      // Fallback senza AI
-      response = await generateSimpleResponse(userMessage, chatId)
-    }
   } catch (e: any) {
     console.error('Lara Agent error:', e.message)
     response = `⚠️ Errore: ${e.message}`
