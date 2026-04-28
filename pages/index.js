@@ -91,11 +91,6 @@ const STEPS = [
   { num: '03', icon: '🚀', title: 'Lavora e guadagna', desc: 'Delega le attività ripetitive all\'AI. Risparmia ore ogni giorno. Scala il tuo business.' },
 ];
 
-const TESTIMONIALS = [
-  { name: 'Marco B.', role: 'E-commerce Entrepreneur', avatar: '👨‍💼', text: 'Ho risparmiato 15 ore a settimana. La ricerca web AI e il funnel builder hanno triplicato le mie conversioni in 30 giorni.', stars: 5 },
-  { name: 'Sara M.', role: 'Digital Marketer', avatar: '👩‍💻', text: 'Finalmente un\'AI che capisce il business italiano. Email marketing, SEO e social media gestiti da un\'unica piattaforma. Eccezionale.', stars: 5 },
-  { name: 'Luca F.', role: 'Freelance Developer', avatar: '🧑‍💻', text: 'Il generatore di contratti e la ricerca freelance mi hanno fatto trovare 3 nuovi clienti in una settimana. ROI straordinario.', stars: 5 },
-];
 
 const FAQS = [
   { q: 'Posso cancellare in qualsiasi momento?', a: 'Sì, nessun vincolo contrattuale. Cancelli quando vuoi direttamente dal pannello account.' },
@@ -346,7 +341,7 @@ export default function Home() {
         <div className="orb3" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, margin: '0 auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa', padding: '0.4rem 1.2rem', borderRadius: 100, fontSize: '0.8rem', fontWeight: 600, marginBottom: '2rem' }}>
-            🤖 Powered by Claude Sonnet 4.6 · AI reale, non simulata
+            🤖 Powered by Claude Sonnet 4.7 · AI reale, non simulata
           </div>
           <div style={{ fontSize: '1.1rem', fontStyle: 'italic', color: '#7c3aed', marginBottom: '1rem', fontWeight: 600, letterSpacing: '0.1em' }}>
             Sogna. Realizza. Guadagna.
@@ -496,30 +491,6 @@ export default function Home() {
                       <span style={{ color: plan.color, flexShrink: 0 }}>✓</span> {f}
                     </div>
                   ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section style={{ padding: '5rem 2rem', background: 'rgba(255,255,255,0.015)' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 900, marginBottom: '3rem' }}>
-            Chi usa Aethersy-AI ogni giorno
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            {TESTIMONIALS.map((t, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, padding: '2rem', textAlign: 'left' }}>
-                <div style={{ color: '#f59e0b', fontSize: '0.9rem', marginBottom: '1rem' }}>{'★'.repeat(t.stars)}</div>
-                <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>&ldquo;{t.text}&rdquo;</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(124,58,237,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>{t.avatar}</div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{t.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.role}</div>
-                  </div>
                 </div>
               </div>
             ))}

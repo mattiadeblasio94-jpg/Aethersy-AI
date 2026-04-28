@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Bot Telegram Aethersy-AI con AI Cloud — LARA OS
-USERBOT MODE - Risponde a tutti nei gruppi dove è aggiunto
-Controllo piani Stripe e Supabase
+OFFICIAL BOT MODE - Usa il token del bot ufficiale
+Controllo piani Stripe e Supabase + Mailerlite Email Integration
 """
 
 import os
@@ -10,21 +10,23 @@ import sys
 import asyncio
 import json
 from datetime import datetime, timedelta
-from telethon import TelegramClient, events
-from telethon.tl.types import Message
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Config - USERBOT MODE (il tuo account personale)
-API_ID = int(os.getenv('TELEGRAM_API_ID', '30925326'))
-API_HASH = os.getenv('TELEGRAM_API_HASH', 'd2885515f94c6bd123596801854f67a5')
-PHONE = os.getenv('TELEGRAM_PHONE', '+393395093888')
+# Config - OFFICIAL BOT MODE
+BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM')
 
 LARA_URL = os.getenv('LARA_WEBHOOK_URL', 'https://aethersy.com/api/lara/chat')
 APP_URL = os.getenv('NEXT_PUBLIC_APP_URL', 'https://aethersy.com')
 LARA_SERVER_URL = os.getenv('LARA_SERVER_URL', 'http://47.87.134.105:3000')
+
+# Mailerlite Webhook per invio email
+MAILERLITE_WEBHOOK_ID = os.getenv('MAILERLITE_WEBHOOK_ID', 'fLJ2J3tSXO')
+MAILERLITE_WEBHOOK_URL = f'https://connect.mailerlite.com/api/webhooks/{MAILERLITE_WEBHOOK_ID}'
 
 # OpenClaw Gateway
 OPENCLAW_GATEWAY_URL = os.getenv('OPENCLAW_GATEWAY_URL', 'ws://localhost:18789')
@@ -34,11 +36,7 @@ USE_OPENCLAW = os.getenv('USE_OPENCLAW', 'false').lower() == 'true'
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
-# Session storage - USERBOT
-SESSION_NAME = 'lara_userbot_session'
-client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
-
-# Memoria conversazioni per utente
+# Session storage - OFFICIAL BOT
 conversation_history = {}
 
 # Rate limiting: {user_id: {count, reset_time}}
@@ -58,7 +56,7 @@ CUSTOM_PACKAGES = {
     'trial': {'daily_messages': 50, 'daily_searches': 10},
 }
 
-# ADMIN ID - Accesso illimitato (NASCOSTO, non mostrare mai in chat)
+# ADMIN ID - Accesso illimitato
 ADMIN_ID = int(os.getenv('ADMIN_TELEGRAM_ID', '8074643162'))
 
 # Accesso libero a TUTTI gli utenti su Telegram
@@ -87,13 +85,6 @@ COME PARLI:
 - Fai domande intelligenti per capire meglio il contesto
 - Dai sempre un next action concreto e eseguibile
 - Celebra i successi, ma sii onesta sui rischi
-
-COME RAGIONI:
-1. Ascolti il vero obiettivo dietro la richiesta
-2. Analizzi il contesto business (mercato, competitor, timing)
-3. Proponi una strategia chiara
-4. Suggerisci azioni immediate
-5. Offri di eseguire tu stessa le azioni
 
 FORMATO RISPOSTA:
 - **Grassetto** per concetti chiave
@@ -268,16 +259,43 @@ def call_lara(messages, user_id, chat_id=None, platform='telegram'):
 
     return None
 
-async def send_upgrade_prompt(chat_id, plan):
+def send_email_via_mailerlite(recipient, subject, body):
+    """
+    Invia email tramite Mailerlite webhook
+    """
+    try:
+        payload = {
+            'to': recipient,
+            'subject': subject,
+            'body': body,
+            'source': 'lara-telegram-bot'
+        }
+
+        resp = requests.post(
+            MAILERLITE_WEBHOOK_URL,
+            json=payload,
+            headers={'Content-Type': 'application/json'},
+            timeout=30
+        )
+
+        if resp.status_code in [200, 201, 202, 204]:
+            return {'success': True, 'message': 'Email inviata con successo'}
+        else:
+            return {'success': False, 'error': f'Errore Mailerlite: {resp.status_code}'}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+async def send_upgrade_prompt(update, chat_id, plan, custom_package=None):
     """
     Invia prompt per upgrade piano
     """
-    await client.send_message(chat_id, """
+    limits = get_user_limits(plan, custom_package)
+    await update.message.reply_text("""
 ⚠️ **Hai raggiunto il limite del piano Free**
 
 **Limiti piano Free:**
-• 20 messaggi/giorno
-• 5 ricerche web/giorno
+• 100 messaggi/giorno
+• 10 ricerche web/giorno
 
 **Upgrade a Pro (€49/mese):**
 • 1000 messaggi/giorno
@@ -292,19 +310,18 @@ async def send_upgrade_prompt(chat_id, plan):
 
 👉 **Upgrade ora:** https://aethersy.com/pricing
 
-Scrivi `/status` per verificare il tuo piano.""", parse_mode='md')
+Scrivi `/status` per verificare il tuo piano.""", parse_mode='Markdown')
 
-@client.on(events.NewMessage(incoming=True))
-async def handle_msg(event: Message):
+async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Gestisce messaggi in arrivo — USERBOT risponde a TUTTI gli utenti
+    Gestisce messaggi in arrivo — BOT risponde a TUTTI gli utenti
     """
-    if event.sender_id == (await client.get_me()).id:
-        return  # Ignora messaggi del bot stesso
+    if update.message is None:
+        return
 
-    uid = str(event.sender_id)
-    msg = event.text or ''
-    chat_id = event.chat_id
+    uid = str(update.message.from_user.id)
+    msg = update.message.text or ''
+    chat_id = update.message.chat_id
 
     # Skip comandi
     if msg.startswith('/'):
@@ -318,7 +335,7 @@ async def handle_msg(event: Message):
 
     # Controlla rate limit
     if not check_rate_limit(uid, plan, custom_package):
-        await send_upgrade_prompt(chat_id, plan, custom_package)
+        await send_upgrade_prompt(update, chat_id, plan, custom_package)
         return
 
     # Inizializza storico
@@ -343,9 +360,9 @@ async def handle_msg(event: Message):
                 for action in result['next_actions'][:2]:
                     response += f"• {action}\n"
 
-        await event.respond(response, parse_mode='md')
+        await update.message.reply_text(response, parse_mode='Markdown')
     else:
-        await event.respond("""
+        await update.message.reply_text("""
 💡 **Sono Lara, la tua AI Agent di Aethersy!**
 
 Posso aiutarti con:
@@ -358,32 +375,33 @@ Posso aiutarti con:
 **Il tuo piano:** {plan}
 Scrivi `/status` per dettagli.
 
-Cosa ti serve ora? 🎯""".format(plan=plan.upper()), parse_mode='md')
+Cosa ti serve ora? 🎯""".format(plan=plan.upper()), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/start'))
-async def handle_start(event: Message):
+async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /start
     """
-    uid = str(event.sender_id)
-    plan = get_user_plan(uid)
+    uid = str(update.message.from_user.id)
+    plan, custom_package = get_user_plan(uid)
+    limits = get_user_limits(plan, custom_package)
 
-    await event.respond(f"""
+    await update.message.reply_text("""
 🚀 **Benvenuto su Aethersy-AI!**
 
 *"Sogna, Realizza, Guadagna"*
 
 Sono Lara, la tua AI Agent imprenditoriale.
 
-**Il tuo piano:** {plan.upper()}
+**Il tuo piano:** {plan}
 **Limiti giornalieri:**
-• Messaggi: {PLAN_LIMITS[plan]['daily_messages']}
-• Ricerche: {PLAN_LIMITS[plan]['daily_searches']}
+• Messaggi: {msg_limit}
+• Ricerche: {search_limit}
 
 **Comandi:**
 /status — Verifica il tuo piano
 /upgrade — Link per upgrade
 /help — Guida completa
+/email — Invia email tramite Mailerlite
 
 **Esempi:**
 • "Cerca ultime news su AI"
@@ -391,14 +409,17 @@ Sono Lara, la tua AI Agent imprenditoriale.
 • "Crea musica epic 120 BPM"
 • "Scrivi funzione Python"
 
-Cosa ti serve oggi? 🎯""".format(plan=plan), parse_mode='md')
+Cosa ti serve oggi? 🎯""".format(
+        plan=plan.upper(),
+        msg_limit=limits['daily_messages'],
+        search_limit=limits['daily_searches']
+    ), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/status'))
-async def handle_status(event: Message):
+async def handle_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /status — Verifica piano e limiti
     """
-    uid = str(event.sender_id)
+    uid = str(update.message.from_user.id)
     plan, custom_package = get_user_plan(uid)
     limits = get_user_limits(plan, custom_package)
 
@@ -408,32 +429,38 @@ async def handle_status(event: Message):
 
     pkg_text = f"\n**Pacchetto personalizzato:** {custom_package.upper()}" if custom_package else ""
 
-    await event.respond(f"""
-📊 **Il tuo piano: {plan.upper()}{pkg_text}**
+    await update.message.reply_text("""
+📊 **Il tuo piano: {plan}{pkg}**
 
 **Utilizzo oggi:**
 • Messaggi usati: {used}
 • Messaggi rimanenti: {remaining}
 
 **Limiti:**
-• Messaggi/giorno: {limits['daily_messages']}
-• Ricerche/giorno: {limits['daily_searches']}
+• Messaggi/giorno: {msg_limit}
+• Ricerche/giorno: {search_limit}
 
 **Upgrade:**
 Pro: €49/mese → https://aethersy.com/pricing
 Business: €199/mese → https://aethersy.com/pricing
 
-Per collegare questo userbot al tuo account Aethersy:
+Per collegare questo bot al tuo account Aethersy:
 1. Accedi su https://aethersy.com
 2. Vai su Impostazioni
-3. Collega Telegram""", parse_mode='md')
+3. Collega Telegram""".format(
+        plan=plan.upper(),
+        pkg=pkg_text,
+        used=used,
+        remaining=remaining,
+        msg_limit=limits['daily_messages'],
+        search_limit=limits['daily_searches']
+    ), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/upgrade'))
-async def handle_upgrade(event: Message):
+async def handle_upgrade(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /upgrade — Link upgrade piano
     """
-    await event.respond("""
+    await update.message.reply_text("""
 💎 **Upgrade del tuo piano**
 
 **Pro (€49/mese):**
@@ -453,14 +480,13 @@ async def handle_upgrade(event: Message):
 👉 **Scegli il tuo piano:**
 https://aethersy.com/pricing
 
-Dopo l'upgrade, scrivi `/status` per verificare.""", parse_mode='md')
+Dopo l'upgrade, scrivi `/status` per verificare.""", parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/help'))
-async def handle_help(event: Message):
+async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /help — Guida completa
     """
-    is_admin_user = is_admin(event.sender_id)
+    is_admin_user = update.message.from_user.id == ADMIN_ID
 
     admin_commands = ""
     if is_admin_user:
@@ -474,8 +500,8 @@ async def handle_help(event: Message):
 /limits — Mostra pacchetti disponibili
 """
 
-    await event.respond(f"""
-📚 **Guida Aethersy-AI Userbot**
+    await update.message.reply_text("""
+📚 **Guida Aethersy-AI Bot**
 
 **Comandi:**
 /start — Inizia conversazione
@@ -483,7 +509,8 @@ async def handle_help(event: Message):
 /upgrade — Link per upgrade
 /help — Questa guida
 /reset — Reset conversazione
-{admin_commands}
+/email — Invia email (es: /email utente@example.com Oggetto Testo)
+{admin}
 **Esempi naturali:**
 • "Cerca ultime news su AI"
 • "Genera video di tramonto con camera 35mm"
@@ -498,21 +525,58 @@ Specificare parametri tecnici:
 - Music: BPM, key, stems, mastering
 
 **Piani:**
-Free: 100 messaggi/giorno (aggiornato!)
+Free: 100 messaggi/giorno
 Pro: 1000 messaggi/giorno
 Business: 10000 messaggi/giorno
 Enterprise: Illimitato
 
-*Sogna, Realizza, Guadagna.*""", parse_mode='md')
+*Sogna, Realizza, Guadagna.*""".format(admin=admin_commands), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/reset'))
-async def handle_reset(event: Message):
+async def handle_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /reset — Reset conversazione
     """
-    uid = str(event.sender_id)
+    uid = str(update.message.from_user.id)
     conversation_history[uid] = [SYSTEM_PROMPT]
-    await event.respond("🔄 **Context reset!**\n\nNuova conversazione iniziata.", parse_mode='md')
+    await update.message.reply_text("🔄 **Context reset!**\n\nNuova conversazione iniziata.", parse_mode='Markdown')
+
+async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Comando /email — Invia email tramite Mailerlite
+    Uso: /email destinatario@example.com Oggetto dell'email Testo del messaggio
+    """
+    args = context.args
+
+    if len(args) < 3:
+        await update.message.reply_text("""
+📧 **Invia Email tramite Mailerlite**
+
+**Uso:** `/email destinatario@example.com Oggetto Testo del messaggio`
+
+**Esempio:**
+`/email mario@example.com Preventivo Ciao Mario, ecco il preventivo richiesto...`
+
+**Nota:** Il destinatario deve essere iscritto alla tua mailing list Mailerlite.""", parse_mode='Markdown')
+        return
+
+    recipient = args[0]
+    subject = args[1]
+    body = ' '.join(args[2:])
+
+    # Verifica formato email
+    if '@' not in recipient or '.' not in recipient.split('@')[-1]:
+        await update.message.reply_text("❌ **Email non valida**\n\nInserisci un indirizzo email corretto.")
+        return
+
+    await update.message.reply_text("📧 **Invio email in corso...**\n\nDestinatario: `{}`\nOggetto: `{}`".format(recipient, subject), parse_mode='Markdown')
+
+    # Invia tramite Mailerlite webhook
+    result = send_email_via_mailerlite(recipient, subject, body)
+
+    if result.get('success'):
+        await update.message.reply_text("✅ **Email inviata con successo!**\n\nL'email è stata accodata per l'invio tramite Mailerlite.")
+    else:
+        await update.message.reply_text("⚠️ **Errore invio email**\n\n{}".format(result.get('error', 'Errore sconosciuto')))
 
 # ============================================
 # COMANDI ADMIN - Monitoraggio Lead & System
@@ -524,15 +588,14 @@ def is_admin(sender_id):
     """
     return sender_id == ADMIN_ID
 
-@client.on(events.NewMessage(pattern='/stats'))
-async def handle_stats(event: Message):
+async def handle_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /stats — Statistiche sistema (ADMIN ONLY)
     """
-    sender_id = str(event.sender_id)
+    sender_id = update.message.from_user.id
 
-    if not is_admin(event.sender_id):
-        await event.respond("⛔ **Comando riservato agli admin**\n\nSolo gli utenti con accesso admin possono usare questo comando.")
+    if not is_admin(sender_id):
+        await update.message.reply_text("⛔ **Comando riservato agli admin**\n\nSolo gli utenti con accesso admin possono usare questo comando.", parse_mode='Markdown')
         return
 
     try:
@@ -574,43 +637,49 @@ async def handle_stats(event: Message):
         )
         active_sessions = len(resp.json()) if resp.status_code == 200 else 0
 
-        await event.respond(f"""
+        await update.message.reply_text("""
 📊 **Statistiche Sistema - Admin**
 
 **Utenti:**
-• Totali: {total_users}
-• Nuovi oggi: {new_users_today}
+• Totali: {total}
+• Nuovi oggi: {new}
 
 **Lead:**
-• Totali: {total_leads}
+• Totali: {leads}
 
 **Revenue:**
 • MRR: €{mrr}
 
 **Attività:**
-• Sessioni attive (5min): {active_sessions}
+• Sessioni attive (5min): {active}
 
-_Ultimo aggiornamento: {datetime.now().strftime('%H:%M:%S')}_
-""", parse_mode='md')
+_Ultimo aggiornamento: {time}_
+""".format(
+            total=total_users,
+            new=new_users_today,
+            leads=total_leads,
+            mrr=mrr,
+            active=active_sessions,
+            time=datetime.now().strftime('%H:%M:%S')
+        ), parse_mode='Markdown')
 
     except Exception as e:
-        await event.respond(f"⚠️ **Errore recupero stats:**\n`{e}`", parse_mode='md')
+        await update.message.reply_text("⚠️ **Errore recupero stats:**\n`{}`".format(e), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/user'))
-async def handle_user(event: Message):
+async def handle_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /user [email] — Dettagli utente (ADMIN ONLY)
     """
-    if not is_admin(event.sender_id):
-        await event.respond("⛔ **Comando riservato agli admin**")
+    if not is_admin(update.message.from_user.id):
+        await update.message.reply_text("⛔ **Comando riservato agli admin**")
         return
 
-    args = event.text.split()
-    if len(args) < 2:
-        await event.respond("📝 **Uso:** `/user email@esempio.com`\n\nFornisci l'email dell'utente da cercare.")
+    args = context.args
+    if len(args) < 1:
+        await update.message.reply_text("📝 **Uso:** `/user email@esempio.com`\n\nFornisci l'email dell'utente da cercare.", parse_mode='Markdown')
         return
 
-    email = args[1]
+    email = args[0]
 
     try:
         headers = {
@@ -630,41 +699,49 @@ async def handle_user(event: Message):
             data = resp.json()
             if data and len(data) > 0:
                 user = data[0]
-                await event.respond(f"""
+                await update.message.reply_text("""
 📋 **Profilo Utente**
 
-**Email:** {user.get('email', 'N/A')}
-**Nome:** {user.get('full_name', 'N/A')}
-**Piano:** {user.get('plan', 'free').upper()}
-**Telegram ID:** {user.get('telegram_id', 'N/A')}
-**Stripe Customer:** `{user.get('stripe_customer_id', 'N/A')}`
-**Iscritto dal:** {user.get('created_at', 'N/A')[:10]}
+**Email:** {email}
+**Nome:** {name}
+**Piano:** {plan}
+**Telegram ID:** {tg}
+**Stripe Customer:** `{stripe}`
+**Iscritto dal:** {created}
 
 **Limiti giornalieri:**
-• Messaggi: {PLAN_LIMITS.get(user.get('plan', 'free'), PLAN_LIMITS['free'])['daily_messages']}
-• Ricerche: {PLAN_LIMITS.get(user.get('plan', 'free'), PLAN_LIMITS['free'])['daily_searches']}
-""", parse_mode='md')
+• Messaggi: {msg}
+• Ricerche: {search}
+""".format(
+                    email=user.get('email', 'N/A'),
+                    name=user.get('full_name', 'N/A'),
+                    plan=user.get('plan', 'free').upper(),
+                    tg=user.get('telegram_id', 'N/A'),
+                    stripe=user.get('stripe_customer_id', 'N/A'),
+                    created=user.get('created_at', 'N/A')[:10] if user.get('created_at') else 'N/A',
+                    msg=PLAN_LIMITS.get(user.get('plan', 'free'), PLAN_LIMITS['free'])['daily_messages'],
+                    search=PLAN_LIMITS.get(user.get('plan', 'free'), PLAN_LIMITS['free'])['daily_searches']
+                ), parse_mode='Markdown')
             else:
-                await event.respond(f"❌ **Utente non trovato**\n\nNessun utente con email `{email}`.")
+                await update.message.reply_text(f"❌ **Utente non trovato**\n\nNessun utente con email `{email}`.", parse_mode='Markdown')
         else:
-            await event.respond(f"⚠️ **Errore API:** {resp.status_code}")
+            await update.message.reply_text(f"⚠️ **Errore API:** {resp.status_code}")
 
     except Exception as e:
-        await event.respond(f"⚠️ **Errore:** `{e}`", parse_mode='md')
+        await update.message.reply_text("⚠️ **Errore:** `{}`".format(e), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/alerts'))
-async def handle_alerts(event: Message):
+async def handle_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /alerts — Gestisci notifiche admin (ADMIN ONLY)
     """
-    if not is_admin(event.sender_id):
-        await event.respond("⛔ **Comando riservato agli admin**")
+    if not is_admin(update.message.from_user.id):
+        await update.message.reply_text("⛔ **Comando riservato agli admin**")
         return
 
-    args = event.text.split()
+    args = context.args
 
-    if len(args) < 2:
-        await event.respond("""
+    if len(args) < 1:
+        await update.message.reply_text("""
 🔔 **Gestione Alert Admin**
 
 **Comandi:**
@@ -677,35 +754,34 @@ async def handle_alerts(event: Message):
 • Pagamenti Stripe completati
 • Errori critici sistema
 • Consumo API anomalo
-""", parse_mode='md')
+""", parse_mode='Markdown')
         return
 
-    action = args[1].lower()
+    action = args[0].lower()
 
     if action == 'on':
-        await event.respond("✅ **Notifiche ATTIVATE**\n\nRiceverai alert in tempo reale su Telegram.")
+        await update.message.reply_text("✅ **Notifiche ATTIVATE**\n\nRiceverai alert in tempo reale su Telegram.", parse_mode='Markdown')
     elif action == 'off':
-        await event.respond("⏸️ **Notifiche DISATTIVATE**\n\nLe notifiche sono state sospese.")
+        await update.message.reply_text("⏸️ **Notifiche DISATTIVATE**\n\nLe notifiche sono state sospese.", parse_mode='Markdown')
     elif action == 'status':
-        await event.respond(f"📊 **Stato notifiche:** {'✅ ATTIVE' if ALERTS_ENABLED else '⏸️ DISATTIVATE'}")
+        await update.message.reply_text("📊 **Stato notifiche:** {}".format('✅ ATTIVE' if ALERTS_ENABLED else '⏸️ DISATTIVATE'), parse_mode='Markdown')
     else:
-        await event.respond("❌ Comando non valido. Usa `/alerts` per la guida.")
+        await update.message.reply_text("❌ Comando non valido. Usa `/alerts` per la guida.", parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/grant'))
-async def handle_grant_admin(event: Message):
+async def handle_grant_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /grant [email] — Concedi accesso admin (ADMIN ONLY)
     """
-    if not is_admin(event.sender_id):
-        await event.respond("⛔ **Comando riservato agli admin**")
+    if not is_admin(update.message.from_user.id):
+        await update.message.reply_text("⛔ **Comando riservato agli admin**")
         return
 
-    args = event.text.split()
-    if len(args) < 2:
-        await event.respond("📝 **Uso:** `/grant email@esempio.com`\n\nConcede accesso admin all'utente specificato.")
+    args = context.args
+    if len(args) < 1:
+        await update.message.reply_text("📝 **Uso:** `/grant email@esempio.com`\n\nConcede accesso admin all'utente specificato.", parse_mode='Markdown')
         return
 
-    email = args[1]
+    email = args[0]
 
     try:
         headers = {
@@ -738,30 +814,29 @@ async def handle_grant_admin(event: Message):
                 )
 
                 if resp.status_code in [200, 201]:
-                    await event.respond(f"✅ **Accesso ADMIN concesso!**\n\nUtente: `{email}`\nID: `{user_id}`\n\nPuò ora accedere al pannello admin su https://aethersy.com/admin-new")
+                    await update.message.reply_text(f"✅ **Accesso ADMIN concesso!**\n\nUtente: `{email}`\nID: `{user_id}`\n\nPuò ora accedere al pannello admin su https://aethersy.com/admin-new", parse_mode='Markdown')
                 else:
-                    await event.respond(f"⚠️ **Errore grant:** {resp.text}")
+                    await update.message.reply_text(f"⚠️ **Errore grant:** {resp.text}", parse_mode='Markdown')
             else:
-                await event.respond(f"❌ **Utente non trovato** con email `{email}`")
+                await update.message.reply_text(f"❌ **Utente non trovato** con email `{email}`", parse_mode='Markdown')
         else:
-            await event.respond(f"⚠️ **Errore API:** {resp.status_code}")
+            await update.message.reply_text(f"⚠️ **Errore API:** {resp.status_code}", parse_mode='Markdown')
 
     except Exception as e:
-        await event.respond(f"⚠️ **Errore:** `{e}`", parse_mode='md')
+        await update.message.reply_text("⚠️ **Errore:** `{}`".format(e), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/package'))
-async def handle_package(event: Message):
+async def handle_package(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /package [email] [pacchetto] — Assegna pacchetto personalizzato (ADMIN ONLY)
     Pacchetti: free, vip, trial, pro, business, enterprise
     """
-    if not is_admin(event.sender_id):
-        await event.respond("⛔ **Comando riservato agli admin**")
+    if not is_admin(update.message.from_user.id):
+        await update.message.reply_text("⛔ **Comando riservato agli admin**")
         return
 
-    args = event.text.split()
-    if len(args) < 3:
-        await event.respond("""
+    args = context.args
+    if len(args) < 2:
+        await update.message.reply_text("""
 📦 **Gestione Pacchetti Personalizzati**
 
 **Uso:** `/package email@esempio.com pacchetto`
@@ -775,15 +850,15 @@ async def handle_package(event: Message):
 • enterprise — Illimitato
 
 **Esempio:** `/package utente@email.com vip`
-""", parse_mode='md')
+""", parse_mode='Markdown')
         return
 
-    email = args[1]
-    package = args[2].lower()
+    email = args[0]
+    package = args[1].lower()
 
     valid_packages = ['free', 'trial', 'vip', 'pro', 'business', 'enterprise', 'none']
     if package not in valid_packages:
-        await event.respond(f"❌ **Pacchetto non valido**\n\nUsa uno di questi: {', '.join(valid_packages)}")
+        await update.message.reply_text(f"❌ **Pacchetto non valido**\n\nUsa uno di questi: {', '.join(valid_packages)}", parse_mode='Markdown')
         return
 
     try:
@@ -827,35 +902,39 @@ async def handle_package(event: Message):
 
                 if resp.status_code in [200, 201, 204, 206]:
                     limits = get_user_limits(current_plan if package == 'none' else package, None if package == 'none' else package)
-                    await event.respond(f"""
+                    await update.message.reply_text("""
 ✅ **Pacchetto assegnato!**
 
 **Utente:** `{email}`
-**Pacchetto:** {pkg_display}
+**Pacchetto:** {pkg}
 **Limiti:**
-• Messaggi/giorno: {limits['daily_messages']}
-• Ricerche/giorno: {limits['daily_searches']}
-""", parse_mode='md')
+• Messaggi/giorno: {msg}
+• Ricerche/giorno: {search}
+""".format(
+                        email=email,
+                        pkg=pkg_display,
+                        msg=limits['daily_messages'],
+                        search=limits['daily_searches']
+                    ), parse_mode='Markdown')
                 else:
-                    await event.respond(f"⚠️ **Errore update:** {resp.text}")
+                    await update.message.reply_text(f"⚠️ **Errore update:** {resp.text}", parse_mode='Markdown')
             else:
-                await event.respond(f"❌ **Utente non trovato** con email `{email}`")
+                await update.message.reply_text(f"❌ **Utente non trovato** con email `{email}`", parse_mode='Markdown')
         else:
-            await event.respond(f"⚠️ **Errore API:** {resp.status_code}")
+            await update.message.reply_text(f"⚠️ **Errore API:** {resp.status_code}", parse_mode='Markdown')
 
     except Exception as e:
-        await event.respond(f"⚠️ **Errore:** `{e}`", parse_mode='md')
+        await update.message.reply_text("⚠️ **Errore:** `{}`".format(e), parse_mode='Markdown')
 
-@client.on(events.NewMessage(pattern='/limits'))
-async def handle_limits(event: Message):
+async def handle_limits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Comando /limits — Mostra limiti pacchetti (ADMIN ONLY)
     """
-    if not is_admin(event.sender_id):
-        await event.respond("⛔ **Comando riservato agli admin**")
+    if not is_admin(update.message.from_user.id):
+        await update.message.reply_text("⛔ **Comando riservato agli admin**")
         return
 
-    await event.respond("""
+    await update.message.reply_text("""
 📦 **Pacchetti e Limiti Disponibili**
 
 **Piani Standard:**
@@ -873,26 +952,62 @@ async def handle_limits(event: Message):
 
 **Comando per rimuovere:**
 `/package email@esempio.com none`
-""", parse_mode='md')
+""", parse_mode='Markdown')
 
-async def main():
+async def post_init(application: Application):
     """
-    Avvio principale - USERBOT MODE
+    Inizializzazione post-avvio
     """
-    await client.start(phone=PHONE)
-    me = await client.get_me()
-    print("✅ Aethersy-AI Userbot avviato!")
-    print(f"   Account: @{me.username or 'nessuno'} ({me.first_name})")
+    bot = application.bot
+    await bot.set_my_commands([
+        ('start', 'Inizia conversazione'),
+        ('status', 'Verifica piano e limiti'),
+        ('upgrade', 'Link upgrade piano'),
+        ('help', 'Guida completa'),
+        ('reset', 'Reset conversazione'),
+        ('email', 'Invia email tramite Mailerlite'),
+    ])
+
+def main():
+    """
+    Avvio principale - OFFICIAL BOT MODE
+    """
+    # Crea application
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    # Registra handlers
+    application.add_handler(CommandHandler("start", handle_start))
+    application.add_handler(CommandHandler("status", handle_status))
+    application.add_handler(CommandHandler("upgrade", handle_upgrade))
+    application.add_handler(CommandHandler("help", handle_help))
+    application.add_handler(CommandHandler("reset", handle_reset))
+    application.add_handler(CommandHandler("email", handle_email))
+
+    # Admin handlers
+    application.add_handler(CommandHandler("stats", handle_stats))
+    application.add_handler(CommandHandler("user", handle_user))
+    application.add_handler(CommandHandler("alerts", handle_alerts))
+    application.add_handler(CommandHandler("grant", handle_grant_admin))
+    application.add_handler(CommandHandler("package", handle_package))
+    application.add_handler(CommandHandler("limits", handle_limits))
+
+    # Message handler per tutti i messaggi non comando
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_msg))
+
+    # Post-init per set comandi
+    application.post_init = post_init
+
+    # Avvia polling
+    print("🚀 Aethersy-AI — Telegram Official Bot")
+    print(f"   Bot Token: {BOT_TOKEN[:20]}...")
     print(f"   Lara API: {LARA_URL}")
     print(f"   App URL: {APP_URL}")
-    print(f"   Supabase: {SUPABASE_URL}")
+    print(f"   Mailerlite Webhook: {MAILERLITE_WEBHOOK_ID}")
     print()
-    await client.run_until_disconnected()
+    print("✅ Bot avviato in modalità OFFICIAL (non userbot)")
+    print()
+
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
-    print("🚀 Aethersy-AI — Telegram Userbot")
-    print(f"   Phone: {PHONE}")
-    print(f"   Lara API: {LARA_URL}")
-    print(f"   App URL: {APP_URL}")
-    print()
-    asyncio.run(main())
+    main()
