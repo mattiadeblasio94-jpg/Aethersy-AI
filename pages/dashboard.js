@@ -203,10 +203,10 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* Main Content Area */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <main style={{ ...css.main, width: '100%', maxWidth: '100%' }}>
-        {/* TOP TOOLBAR */}
+        <main style={{ ...css.main, width: '100%', maxWidth: '100%', overflowY: 'auto' }}>
+          {/* TOP TOOLBAR */}
         <div style={css.topToolbar}>
           <div style={css.toolbarSection}>
             <a href={OPENCLAW_URL} target="_blank" rel="noopener noreferrer" style={css.toolbarBtn('#3b82f6')}>
@@ -260,10 +260,11 @@ export default function Dashboard() {
           {tool === 'seo'       && <SeoPanel />}
           {tool === 'competitor'&& <CompetitorPanel />}
         </div>
-      </main>
+        </main>
 
-      {/* Live Analytics Panel - Right Sidebar */}
-      <LiveAnalytics />
+        {/* Live Analytics Panel - Right Sidebar */}
+        <LiveAnalytics />
+      </div>
     </div>
   );
 }
