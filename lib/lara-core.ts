@@ -32,15 +32,6 @@ function getAIConfig() {
         chat: 'llama-3.1-8b-instant',
         fast: 'mixtral-8x7b-32768'
       }
-    },
-    alibaba: {
-      apiKey: process.env.ALIBABA_API_KEY,
-      model: process.env.ALIBABA_MODEL || 'qwen-max',
-      baseUrl: 'https://dashscope.aliyuncs.com/api/v1'
-    },
-    huggingface: {
-      apiKey: process.env.HF_API_KEY,
-      model: 'mistralai/Mistral-7B-Instruct-v0.3'
     }
   }
 }

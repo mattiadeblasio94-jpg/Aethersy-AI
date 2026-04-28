@@ -39,7 +39,7 @@ Sei CONCRETA: dai sempre un next action eseguibile.
 Parli come una partner di business in gamba. Usi "noi" quando parli di progetti.
 Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), struttura CONTESTO → INSIGHT → AZIONE → NEXT STEP.`
 
-    // Chiama Groq con system prompt
+    // Chiama Groq con system prompt (API veloce e gratuita)
     const groqKey = process.env.GROQ_API_KEY
     if (groqKey) {
       try {
@@ -74,7 +74,7 @@ Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), s
       }
     }
 
-    // Esegui ciclo Lara completo
+    // Fallback a ciclo Lara completo
     const result = await runLaraCycle({
       userId,
       sessionId,

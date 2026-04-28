@@ -6,18 +6,61 @@ const BOT_USERNAME = 'Lara_Aethersy_Bot';
 const BOT_URL = `https://t.me/${BOT_USERNAME}`;
 const OPENCLAW_URL = 'http://47.87.134.105:3000';
 
-// Social Media Links
+// Social Media Links con icone SVG ufficiali
+const SOCIAL_ICONS = {
+  instagram: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.644-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.644 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+    </svg>
+  ),
+  facebook: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  ),
+  tiktok: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+    </svg>
+  ),
+  linkedin: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+  ),
+  twitter: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.125H5.117z"/>
+    </svg>
+  ),
+  youtube: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  ),
+  reddit: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-.25-.499.399-.667a1.25 1.25 0 0 1 1.099-.139zM7.02 15.278c-.781 0-1.414-.633-1.414-1.414 0-.78.633-1.414 1.414-1.414.78 0 1.414.634 1.414 1.414 0 .781-.634 1.414-1.414 1.414zm4.219 2.556c-1.758 0-3.356-.699-4.539-1.832-.27-.254-.285-.676-.032-.946.253-.27.676-.285.946-.032.926.883 2.193 1.424 3.625 1.424 1.431 0 2.698-.541 3.624-1.424.27-.254.693-.238.946.032.253.27.238.692-.032.946-1.183 1.133-2.781 1.832-4.538 1.832zm4.727-3.645c-.781 0-1.414-.633-1.414-1.414 0-.78.633-1.414 1.414-1.414.78 0 1.414.634 1.414 1.414 0 .781-.634 1.414-1.414 1.414zm.417-3.645c-.333.026-.68.051-1.031.051-3.537 0-6.546-1.675-7.936-4.057a.752.752 0 0 0-.664-.406h-1.5a.75.75 0 0 0 0 1.5h.938c.158 2.897 3.054 5.219 6.656 5.219.432 0 .85-.037 1.25-.102V11.5a.75.75 0 0 0 1.5 0v-2.781a.75.75 0 0 0-.213-.519z"/>
+    </svg>
+  ),
+  twitch: (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+    </svg>
+  )
+};
+
 const SOCIAL_LINKS = [
-  { id: 'instagram', label: 'Instagram', icon: '📸', url: 'https://instagram.com' },
-  { id: 'facebook', label: 'Facebook', icon: '📘', url: 'https://facebook.com' },
-  { id: 'tiktok', label: 'TikTok', icon: '🎵', url: 'https://tiktok.com' },
-  { id: 'linkedin', label: 'LinkedIn', icon: '💼', url: 'https://linkedin.com' },
-  { id: 'twitter', label: 'X/Twitter', icon: '🐦', url: 'https://twitter.com' },
-  { id: 'reddit', label: 'Reddit', icon: '🤖', url: 'https://reddit.com' },
-  { id: 'youtube', label: 'YouTube', icon: '📺', url: 'https://youtube.com' },
-  { id: 'pinterest', label: 'Pinterest', icon: '📌', url: 'https://pinterest.com' },
-  { id: 'snapchat', label: 'Snapchat', icon: '👻', url: 'https://snapchat.com' },
-  { id: 'twitch', label: 'Twitch', icon: '🎮', url: 'https://twitch.tv' },
+  { id: 'instagram', label: 'Instagram', url: 'https://instagram.com' },
+  { id: 'facebook', label: 'Facebook', url: 'https://facebook.com' },
+  { id: 'tiktok', label: 'TikTok', url: 'https://tiktok.com' },
+  { id: 'linkedin', label: 'LinkedIn', url: 'https://linkedin.com' },
+  { id: 'twitter', label: 'X/Twitter', url: 'https://twitter.com' },
+  { id: 'reddit', label: 'Reddit', url: 'https://reddit.com' },
+  { id: 'youtube', label: 'YouTube', url: 'https://youtube.com' },
+  { id: 'pinterest', label: 'Pinterest', url: 'https://pinterest.com' },
+  { id: 'snapchat', label: 'Snapchat', url: 'https://snapchat.com' },
+  { id: 'twitch', label: 'Twitch', url: 'https://twitch.tv' },
 ];
 
 const LANGUAGES = [
@@ -273,7 +316,7 @@ export default function Home() {
           <div className="socialScroll">
             {SOCIAL_LINKS.map(s => (
               <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="socialBtn">
-                {s.icon} {s.label}
+                {SOCIAL_ICONS[s.id] || SOCIAL_ICONS.instagram} {s.label}
               </a>
             ))}
           </div>
@@ -306,34 +349,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* NAV */}
-      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 3rem', background: 'rgba(6,6,17,0.8)', borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0, zIndex: 99, backdropFilter: 'blur(20px)' }}>
-        <Link href="/" style={{ fontSize: '1.35rem', fontWeight: 900, background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          ⚡ Aethersy-AI
-        </Link>
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          <a href="#tools" className="nav-link">Strumenti</a>
-          <a href="#pricing" className="nav-link">Prezzi</a>
-          <Link href="/dashboard" className="nav-link">Dashboard</Link>
-          <a href={BOT_URL} target="_blank" rel="noopener noreferrer" className="nav-link">Telegram</a>
-        </div>
-        <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-          {user ? (
-            <>
-              <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, padding: '0.4rem 0.8rem', fontSize: '0.85rem', color: '#a78bfa' }}>
-                👤 {user.name}
-              </Link>
-              <button onClick={logout} style={{ padding: '0.4rem 1rem', border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: '#64748b', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit' }}>Esci</button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => { setTab('login'); setModal(true); }} style={{ padding: '0.5rem 1.2rem', border: '1px solid rgba(124,58,237,0.4)', background: 'transparent', color: '#a78bfa', borderRadius: 8, cursor: 'pointer', fontSize: '0.9rem', fontFamily: 'inherit', transition: 'all 0.2s' }}>Accedi</button>
-              <button onClick={() => { setTab('register'); setModal(true); }} style={{ padding: '0.5rem 1.4rem', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700, fontFamily: 'inherit' }}>Registrati gratis</button>
-            </>
-          )}
-        </div>
-      </nav>
-
       {/* HERO */}
       <section style={{ textAlign: 'center', padding: '7rem 2rem 5rem', position: 'relative', overflow: 'hidden', minHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div className="orb1" />
@@ -341,7 +356,7 @@ export default function Home() {
         <div className="orb3" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, margin: '0 auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)', color: '#a78bfa', padding: '0.4rem 1.2rem', borderRadius: 100, fontSize: '0.8rem', fontWeight: 600, marginBottom: '2rem' }}>
-            🤖 Powered by Claude Sonnet 4.7 · AI reale, non simulata
+            🤖 Powered by Ollama · Open Source AI
           </div>
           <div style={{ fontSize: '1.1rem', fontStyle: 'italic', color: '#7c3aed', marginBottom: '1rem', fontWeight: 600, letterSpacing: '0.1em' }}>
             Sogna. Realizza. Guadagna.
