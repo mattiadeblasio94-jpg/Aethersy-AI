@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+// OPEN SOURCE ONLY - No Anthropic
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Usa Ollama invece
 
 const SYSTEM_PROMPTS = {
   market: `Sei un analista di mercato AI senior specializzato in opportunità tech per il mercato italiano ed europeo.
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       apiMessages = [{ role: 'user', content: prompt }];
     }
 
-    const response = await client.messages.create({
+    const response = await ollamaGenerate({
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       system: systemPrompt,

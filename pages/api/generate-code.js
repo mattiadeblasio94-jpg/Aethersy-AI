@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+// OPEN SOURCE ONLY - No Anthropic
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Usa Ollama invece
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (!desc?.trim()) return res.status(400).json({ error: 'Descrizione mancante' });
 
   try {
-    const response = await client.messages.create({
+    const response = await ollamaGenerate({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: `Sei un esperto sviluppatore software. Genera codice di produzione pulito, commentato e funzionale.

@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+// OPEN SOURCE ONLY - No Anthropic
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Usa Ollama invece
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (!niche?.trim()) return res.status(400).json({ error: 'Nicchia obbligatoria' });
 
   try {
-    const response = await client.messages.create({
+    const response = await ollamaGenerate({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: `Sei un esperto di marketing digitale, growth hacking e monetizzazione online.

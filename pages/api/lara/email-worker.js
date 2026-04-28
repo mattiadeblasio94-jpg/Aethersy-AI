@@ -1,5 +1,24 @@
 import { Redis } from '@upstash/redis';
-import Anthropic from '@anthropic-ai/sdk';
+
+// Helper function per Ollama (open source)
+async function ollamaGenerate({ prompt, system = "", model = "llama3.1:8b", options = {} }) {
+  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+  try {
+    const res = await fetch(`${ollamaBaseUrl}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, prompt, system, stream: false, options: { temperature: 0.7, num_predict: 2048, ...options } })
+    });
+    if (!res.ok) throw new Error(`Ollama error: ${res.status}`);
+    const data = await res.json();
+    return { content: [{ text: data.response || "" }] };
+  } catch (e) {
+    console.log("Ollama error:", e.message);
+    return { content: [{ text: "AI non disponibile" }] };
+  }
+}
+
+// OPEN SOURCE ONLY - No Anthropic
 
 function getRedis() {
   const url = (process.env.UPSTASH_REDIS_REST_URL || '').trim();
@@ -7,7 +26,7 @@ function getRedis() {
   return new Redis({ url, token });
 }
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || '' });
+const client = null;
 
 // LARA_SYSTEM_PROMPT for email processing
 const LARA_EMAIL_SYSTEM = `Sei Lara, l'assistente AI di Aethersy AI Forge Pro.
@@ -72,19 +91,29 @@ async function processEmailQueue() {
 }
 
 async function improveEmail(body, subject) {
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
-    system: LARA_EMAIL_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Migliora questa email:\n\nOggetto: ${subject}\n\nTesto: ${body}`
-      }
-    ],
-  });
+  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+  const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:8b';
 
-  return response.content[0].text;
+  try {
+    const res = await fetch(`${ollamaBaseUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        prompt: `Migliora questa email:\n\nOggetto: ${subject}\n\nTesto: ${body}`,
+        system: LARA_EMAIL_SYSTEM,
+        stream: false,
+        options: { temperature: 0.7, num_predict: 1000 }
+      })
+    });
+
+    if (!res.ok) return body;
+    const data = await res.json();
+    return data.response || body;
+  } catch (e) {
+    console.log('Ollama error:', e.message);
+    return body;
+  }
 }
 
 async function sendViaGmail(creds, to, subject, body) {

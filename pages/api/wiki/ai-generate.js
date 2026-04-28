@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
+// OPEN SOURCE ONLY - No Anthropic
 import { getAllPages } from '../../../lib/wiki';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Usa Ollama invece
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     const allPages = existingPages || await getAllPages().catch(() => []);
     const pageList = allPages.map(p => p.title).join(', ');
 
-    const response = await client.messages.create({
+    const response = await ollamaGenerate({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: `Sei un esperto knowledge manager. Crea contenuti wiki dettagliati, ben strutturati e utili per imprenditori.

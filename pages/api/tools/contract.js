@@ -1,6 +1,25 @@
-import Anthropic from '@anthropic-ai/sdk';
+// OPEN SOURCE ONLY - No Anthropic
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Helper function per Ollama (open source)
+async function ollamaGenerate({ prompt, system = "", model = "llama3.1:8b", options = {} }) {
+  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+  try {
+    const res = await fetch(`${ollamaBaseUrl}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, prompt, system, stream: false, options: { temperature: 0.7, num_predict: 2048, ...options } })
+    });
+    if (!res.ok) throw new Error(`Ollama error: ${res.status}`);
+    const data = await res.json();
+    return { content: [{ text: data.response || "" }] };
+  } catch (e) {
+    console.log("Ollama error:", e.message);
+    return { content: [{ text: "AI non disponibile" }] };
+  }
+}
+
+
+// Usa Ollama invece
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
