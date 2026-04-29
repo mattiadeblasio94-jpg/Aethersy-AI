@@ -972,6 +972,30 @@ async def run_bot():
     """
     Avvio principale - OFFICIAL BOT MODE
     """
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import threading
+
+    # Health check server per Render (porta 8000)
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == '/health':
+                self.send_response(200)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b'OK - Bot running')
+            else:
+                self.send_response(404)
+                self.end_headers()
+        def log_message(self, format, *args):
+            pass  # Suppress logging
+
+    # Avvia health check in background
+    health_server = HTTPServer(('0.0.0.0', 8000), HealthHandler)
+    health_thread = threading.Thread(target=health_server.serve_forever)
+    health_thread.daemon = True
+    health_thread.start()
+    print("🏥 Health check attivo su porta 8000")
+
     # Crea application
     application = Application.builder().token(BOT_TOKEN).build()
 
