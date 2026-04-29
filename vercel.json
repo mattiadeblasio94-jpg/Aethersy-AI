@@ -1,5 +1,8 @@
 {
   "buildCommand": "next build --no-lint",
+  "protectionBypass": {
+    "api": "enabled"
+  },
   "functions": {
     "pages/api/lara/chat.ts":           { "maxDuration": 60 },
     "pages/api/lara/chat.js":           { "maxDuration": 60 },
