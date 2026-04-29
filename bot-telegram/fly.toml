@@ -1,0 +1,21 @@
+app = "aethersy-telegram-bot"
+primary_region = "ord"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  TELEGRAM_BOT_TOKEN = "8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM"
+  LARA_WEBHOOK_URL = "https://aethersy.com/api/lara/chat"
+  MAILERLITE_WEBHOOK_ID = "fLJ2J3tSXO"
+  ADMIN_TELEGRAM_ID = "8074643162"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop = false
+  auto_start = true
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
