@@ -1,0 +1,29 @@
+name: Deploy Telegram Bot to Fly.io
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'bot-telegram/**'
+      - '.github/workflows/fly-deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only --no-cache
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        working-directory: bot-telegram
+
+      - name: Verify deployment
+        run: flyctl status --app aethersy-telegram-bot
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
