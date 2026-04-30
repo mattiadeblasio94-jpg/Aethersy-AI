@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LARA Cluster - Multi Server Control</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; padding: 20px; }
+        h1 { margin-bottom: 20px; color: #00ff88; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .server { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 15px; }
+        .server.active { border-color: #00ff88; }
+        .server.offline { border-color: #ff4444; }
+        .server h3 { color: #00ff88; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .status { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .status.online { background: #00ff8833; color: #00ff88; }
+        .status.offline { background: #ff444433; color: #ff4444; }
+        .output { background: #000; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+        .controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-status { background: #00ff88; color: #000; }
+        .btn-restart { background: #ffaa00; color: #000; }
+        .btn-shell { background: #0088ff; color: #fff; }
+        .global-controls { background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .global-controls h2 { margin-bottom: 15px; color: #00ff88; }
+        .command-row { display: flex; gap: 10px; }
+        .command-row input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 4px; background: #0a0a0a; color: #fff; }
+        .command-row button { padding: 10px 20px; background: #00ff88; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .log-global { background: #000; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 LARA AI Cluster - Multi Server Control</h1>
+
+    <div class="global-controls">
+        <h2>📡 Comando Globale (tutti i server)</h2>
+        <div class="command-row">
+            <input type="text" id="globalCmd" placeholder="Comando shell da eseguire su tutti i server..." value="systemctl status lara-bot">
+            <button onclick="runGlobal()">Esegui su tutti</button>
+        </div>
+        <div class="command-row" style="margin-top: 10px;">
+            <button onclick="checkAll()" class="btn-status">📊 Check Tutti</button>
+            <button onclick="restartAll()" class="btn-restart">🔄 Restart Tutti</button>
+            <button onclick="deployAll()" class="btn-shell">🚀 Deploy Tutti</button>
+        </div>
+        <div class="log-global" id="globalLog">In attesa di comandi...</div>
+    </div>
+
+    <div class="grid" id="serverGrid"></div>
+
+    <script>
+        const SERVERS = [
+            { name: '🤖 BOT', ip: '47.87.134.105', port: 9999 },
+            { name: '🎬 GPU CINEMA', ip: '47.91.76.37', port: 9999 },
+            { name: '🗄️ DATABASE', ip: '47.87.141.18', port: 9999 },
+            { name: '⚙️ WORKER', ip: '47.87.139.66', port: 9999 },
+            { name: '📊 MONITOR', ip: '47.87.141.154', port: 9999 }
+        ];
+
+        function log(msg) {
+            const el = document.getElementById('globalLog');
+            const time = new Date().toLocaleTimeString();
+            el.textContent = `[${time}] ${msg}\n` + el.textContent;
+        }
+
+        async function callServer(server, cmd) {
+            try {
+                const r = await fetch(`http://${server.ip}:${server.port}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cmd })
+                });
+                return await r.json();
+            } catch (e) {
+                return { error: e.message };
+            }
+        }
+
+        async function checkAll() {
+            log('📡 Checking all servers...');
+            for (const s of SERVERS) {
+                const r = await callServer(s, 'echo OK');
+                const el = document.getElementById(`out-${s.ip.replace(/\./g, '-')}`);
+                if (el) {
+                    el.textContent = r.error ? `❌ ${r.error}` : `✅ ${r.out || 'OK'}`;
+                    el.parentElement.parentElement.classList.toggle('offline', !!r.error);
+                    el.parentElement.parentElement.classList.toggle('active', !r.error);
+                }
+            }
+            log('✅ Check completato');
+        }
+
+        async function runGlobal() {
+            const cmd = document.getElementById('globalCmd').value;
+            log(`🚀 Executing "${cmd}" on all servers...`);
+            for (const s of SERVERS) {
+                log(`→ ${s.name}: Running...`);
+                const r = await callServer(s, cmd);
+                const el = document.getElementById(`out-${s.ip.replace(/\./g, '-')}`);
+                if (el) {
+                    el.textContent = r.error ? `❌ ${r.error}` : (r.out || r.err || 'Done');
+                }
+                log(`← ${s.name}: ${r.error ? 'ERROR' : 'OK'}`);
+            }
+            log('✅ All servers executed');
+        }
+
+        async function restartAll() {
+            log('🔄 Restarting all services...');
+            for (const s of SERVERS) {
+                await callServer(s, 'systemctl restart lara-bot || systemctl restart cinema-studio || true');
+                log(`← ${s.name}: Restarted`);
+            }
+            log('✅ All services restarted');
+        }
+
+        async function deployAll() {
+            log('🚀 Deploying on all servers...');
+            for (const s of SERVERS) {
+                await callServer(s, 'cd /opt && git pull || true');
+                log(`← ${s.name}: Deployed`);
+            }
+            log('✅ All servers deployed');
+        }
+
+        function renderServers() {
+            const grid = document.getElementById('serverGrid');
+            grid.innerHTML = SERVERS.map(s => `
+                <div class="server offline" id="srv-${s.ip.replace(/\./g, '-')}">
+                    <h3>${s.name} <span class="status offline">OFFLINE</span></h3>
+                    <div style="font-size:12px;color:#888;margin-bottom:10px;">${s.ip}:${s.port}</div>
+                    <div class="output" id="out-${s.ip.replace(/\./g, '-')}">In attesa...</div>
+                    <div class="controls">
+                        <button class="btn-status" onclick="callServer({ip:'${s.ip}',port:${s.port}},'echo OK').then(r=>document.getElementById('out-${s.ip.replace(/\./g, '-')}').textContent=r.error?r.error:r.out||'OK')">Status</button>
+                        <button class="btn-shell" onclick="callServer({ip:'${s.ip}',port:${s.port}},'ps aux|grep python|head -3').then(r=>document.getElementById('out-${s.ip.replace(/\./g, '-')}').textContent=r.out||r.err)">Processes</button>
+                        <button class="btn-restart" onclick="callServer({ip:'${s.ip}',port:${s.port}},'systemctl restart lara-bot||systemctl restart cinema-studio||true').then(r=>log('${s.name} restarted'))">Restart</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        renderServers();
+        checkAll();
+        setInterval(checkAll, 30000); // Auto-refresh ogni 30s
+    </script>
+</body>
+</html>
