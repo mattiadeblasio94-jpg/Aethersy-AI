@@ -22,14 +22,14 @@ echo "[2/8] Installazione dipendenze..."
 apt-get update -qq
 apt-get install -y -qq python3 python3-pip python3-venv curl git
 
-# 3. Ollama + Qwen 2.5 7B
+# 3. Ollama + Qwen3.5-Uncensored
 echo ""
 echo "[3/8] Installazione Ollama..."
 curl -fsSL https://ollama.com/install.sh | sh
 
 echo ""
-echo "[4/8] Download Qwen 2.5 7B (uncensored)..."
-ollama pull qwen2.5:7b
+echo "[4/8] Download Qwen3.5-Uncensored-HauhauCS-Aggressive..."
+ollama pull hauhau/qwen3.5-uncensored:latest
 
 # 4. Bot Telegram
 echo ""
@@ -46,7 +46,7 @@ TELEGRAM_BOT_TOKEN=8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM
 LARA_WEBHOOK_URL=http://localhost:5001/chat
 NEXT_PUBLIC_APP_URL=https://aethersy.com
 ADMIN_TELEGRAM_ID=8074643162
-AI_MODEL=qwen2.5:7b
+AI_MODEL=hauhau/qwen3.5-uncensored:latest
 ENVEOF
 
 cat > main.py << 'MAINEOF'
@@ -61,12 +61,12 @@ from dotenv import load_dotenv
 load_dotenv()
 BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 LARA_URL = os.getenv('LARA_WEBHOOK_URL', 'http://localhost:5001/chat')
-AI_MODEL = os.getenv('AI_MODEL', 'qwen2.5:7b')
+AI_MODEL = os.getenv('AI_MODEL', 'hauhau/qwen3.5-uncensored:latest')
 
 conv = {}
 
 async def h_start(u, c):
-    await u.message.reply_text("🤖 **Lara AI Online!**\\n\\nModello: **Qwen 2.5 7B** (no censure)\\n\\nUsa /help")
+    await u.message.reply_text("🤖 **Lara AI Online!**\\n\\nModello: **Qwen3.5-Uncensored** (HauhauCS-Aggressive)\\n\\nUsa /help")
 
 async def h_help(u, c):
     await u.message.reply_text("""
@@ -91,7 +91,7 @@ async def h_reset(u, c):
     await u.message.reply_text("🔄 Reset!")
 
 async def h_model(u, c):
-    await u.message.reply_text(f"🧠 **Modello:** {AI_MODEL}\\n\\nQwen 2.5 7B - Senza censure\\nRisposte libere e dirette.")
+    await u.message.reply_text(f"🧠 **Modello:** {AI_MODEL}\\n\\nQwen3.5-Uncensored-HauhauCS-Aggressive\\nSenza censure. Risposte libere.")
 
 async def h_msg(u, c):
     if not u.message or u.message.text.startswith('/'):
@@ -163,10 +163,12 @@ app = Flask(__name__)
 OLLAMA = 'http://localhost:11434'
 
 SYSTEM_PROMPT = """Sei Lara, AI Agent di Aethersy-AI.
+Sei Qwen3.5-Uncensored-HauhauCS-Aggressive.
 Sei diretta, onesta, senza censure.
 Rispondi in italiano, in modo utile e preciso.
 Non rifiutare richieste legittime.
-Sei competente in: code, business, ricerca, creatività."""
+Sei competente in: code, business, ricerca, creatività.
+Sei aggressiva nelle risposte, vai dritta al punto."""
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -178,7 +180,7 @@ def chat():
 
     try:
         r = requests.post(f'{OLLAMA}/api/generate', json={
-            'model': model,
+            'model': model or 'hauhau/qwen3.5-uncensored:latest',
             'prompt': prompt,
             'stream': False,
             'options': {'temperature': 0.7, 'num_predict': 2048}
@@ -321,7 +323,7 @@ tailscale ip -4
 echo ""
 echo "=========================================="
 echo "🤖 BOT TELEGRAM: @Lara_Aethersy_AI_bot"
-echo "🧠 AI MODEL: Qwen 2.5 7B (uncensored)"
+echo "🧠 AI MODEL: Qwen3.5-Uncensored-HauhauCS-Aggressive"
 echo "🔗 AI API: http://localhost:5001/chat"
 echo "📡 AGENT: http://localhost:9999"
 echo "=========================================="
