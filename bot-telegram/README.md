@@ -12,10 +12,8 @@ Bot Telegram che risponde automaticamente usando Lara AI.
 
 4. **Aggiungi variabili d'ambiente** (Settings → Variables):
    ```
-   TELEGRAM_API_ID=30925326
-   TELEGRAM_API_HASH=d2885515f94c6bd123596801854f67a5
-   TELEGRAM_PHONE=+39_YOUR_NUMBER
-   LARA_WEBHOOK_URL=https://aiforge-pro-mattiadeblasio94-8016s-projects.vercel.app/api/lara/chat
+   TELEGRAM_BOT_TOKEN=8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM
+   LARA_WEBHOOK_URL=https://aethersy.com/api/lara/chat
    ```
 
 5. **Deploy automatico** - Railway builda e deploya
@@ -45,9 +43,7 @@ fly auth login
 fly launch --name lara-telegram-bot
 
 # Configura variabili
-fly secrets set TELEGRAM_API_ID=30925326
-fly secrets set TELEGRAM_API_HASH=d2885515f94c6bd123596801854f67a5
-fly secrets set TELEGRAM_PHONE=+39_YOUR_NUMBER
+fly secrets set TELEGRAM_BOT_TOKEN=8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM
 
 # Deploy
 fly deploy
@@ -55,4 +51,3 @@ fly deploy
 
 ---
 
-**Nota:** Per usare un bot Telegram invece dell'account personale, imposta `TELEGRAM_BOT_TOKEN` invece di `TELEGRAM_PHONE`.

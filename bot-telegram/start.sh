@@ -8,7 +8,7 @@ pkill -9 -f 'python3 main.py' 2>/dev/null
 sleep 2
 
 # Avvia nuovo processo
-echo "🚀 Avvio LARA Userbot..."
+echo "🚀 Avvio Bot Telegram Ufficiale..."
 python3 main.py &
 BOT_PID=$!
 
