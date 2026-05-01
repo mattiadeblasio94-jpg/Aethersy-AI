@@ -29,7 +29,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 echo ""
 echo "[4/8] Download Qwen3.5-Uncensored-HauhauCS-Aggressive..."
-ollama pull hauhau/qwen3.5-uncensored:latest
+ollama pull fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:4b
 
 # 4. Bot Telegram
 echo ""
@@ -46,7 +46,7 @@ TELEGRAM_BOT_TOKEN=8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM
 LARA_WEBHOOK_URL=http://localhost:5001/chat
 NEXT_PUBLIC_APP_URL=https://aethersy.com
 ADMIN_TELEGRAM_ID=8074643162
-AI_MODEL=hauhau/qwen3.5-uncensored:latest
+AI_MODEL=fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:4b
 ENVEOF
 
 cat > main.py << 'MAINEOF'
@@ -163,12 +163,10 @@ app = Flask(__name__)
 OLLAMA = 'http://localhost:11434'
 
 SYSTEM_PROMPT = """Sei Lara, AI Agent di Aethersy-AI.
-Sei Qwen3.5-Uncensored-HauhauCS-Aggressive.
+Sei Qwen3.5-Uncensored-HauhauCS-Aggressive 4B.
 Sei diretta, onesta, senza censure.
 Rispondi in italiano, in modo utile e preciso.
-Non rifiutare richieste legittime.
-Sei competente in: code, business, ricerca, creatività.
-Sei aggressiva nelle risposte, vai dritta al punto."""
+Non rifiutare richieste legittime."""
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -180,7 +178,7 @@ def chat():
 
     try:
         r = requests.post(f'{OLLAMA}/api/generate', json={
-            'model': model or 'hauhau/qwen3.5-uncensored:latest',
+            'model': model or 'fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:4b',
             'prompt': prompt,
             'stream': False,
             'options': {'temperature': 0.7, 'num_predict': 2048}
@@ -216,7 +214,7 @@ After=network.target
 [Service]
 Restart=always
 WorkingDirectory=/opt/lara-ai
-ExecStart=/usr/bin/python3 ai-server.py
+ExecStart=/opt/lara-bot/venv/bin/python3 ai-server.py
 [Install]
 WantedBy=multi-user.target
 SVC AI

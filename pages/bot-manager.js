@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
 const SERVERS = [
-  { name: 'Server 1 (BOT)', ip: '47.87.134.105' },
-  { name: 'Server 2', ip: '47.87.141.18' },
-  { name: 'Server 3', ip: '47.87.139.66' },
-  { name: 'Server 4', ip: '47.87.141.154' },
+  { name: '🤖 BOT AI', ip: '47.91.76.37', port: 9999 },
+  { name: '📊 DATABASE', ip: '47.87.141.18', port: 9999 },
+  { name: '⚙️ WORKER', ip: '47.87.139.66', port: 9999 },
+  { name: '📈 MONITOR', ip: '47.87.141.154', port: 9999 },
 ];
 
 export default function BotManager() {
