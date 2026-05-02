@@ -1,5 +1,13 @@
 {
   "buildCommand": "next build --no-lint",
+  "redirects": [
+    { "source": "/api/telegram.js", "destination": "/api/telegram" },
+    { "source": "/api/tools/google.js", "destination": "/api/tools/google" },
+    { "source": "/api/tools/pdf.js", "destination": "/api/tools/pdf" },
+    { "source": "/api/tools/speech.js", "destination": "/api/tools/speech" },
+    { "source": "/api/tools/image.js", "destination": "/api/tools/image" },
+    { "source": "/api/tools/registry.js", "destination": "/api/tools/registry" }
+  ],
   "functions": {
     "pages/api/lara/chat.ts":           { "maxDuration": 60 },
     "pages/api/lara/chat.js":           { "maxDuration": 60 },

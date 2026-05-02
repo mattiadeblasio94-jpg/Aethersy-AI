@@ -12,3 +12,5 @@ node_modules/
 bot-telegram/.env
 bot-telegram/*.session
 bot-telegram/*.session-journal
+
+.vercel
