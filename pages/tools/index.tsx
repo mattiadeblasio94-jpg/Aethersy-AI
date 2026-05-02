@@ -3,8 +3,9 @@
  * Aethersy AI Platform
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
+import type { GetServerSideProps } from 'next';
 import Header from '../../components/Header';
 
 interface AITool {
@@ -27,34 +28,14 @@ interface Template {
   credits: number;
 }
 
-export default function ToolsDashboard() {
+export default function ToolsDashboard({ initialData }: { initialData: any }) {
   const [activeTab, setActiveTab] = useState<'tools' | 'templates'>('tools');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [tools, setTools] = useState<AITool[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-
-  useEffect(() => {
-    fetchDashboard();
-  }, []);
-
-  const fetchDashboard = async () => {
-    try {
-      const res = await fetch('/api/tools/registry');
-      const data = await res.json();
-      setStats(data.stats);
-      setTools(data.featuredTools || []);
-      setTemplates(data.topTemplates || []);
-      setCategories(data.categories?.tools || []);
-    } catch (error) {
-      console.error('Error fetching dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [tools, setTools] = useState<AITool[]>(initialData?.featuredTools || []);
+  const [templates, setTemplates] = useState<Template[]>(initialData?.topTemplates || []);
+  const [categories, setCategories] = useState<any[]>(initialData?.categories?.tools || []);
+  const [stats, setStats] = useState<any>(initialData?.stats || null);
 
   const filteredTools = tools.filter(tool => {
     if (selectedCategory !== 'all' && tool.category !== selectedCategory) return false;
@@ -272,3 +253,23 @@ export default function ToolsDashboard() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const res = await fetch(`${apiUrl}/api/tools/registry`);
+    const data = await res.json();
+
+    return {
+      props: {
+        initialData: data
+      }
+    };
+  } catch (error) {
+    return {
+      props: {
+        initialData: null
+      }
+    };
+  }
+};
