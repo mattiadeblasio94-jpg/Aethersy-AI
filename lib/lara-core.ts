@@ -460,7 +460,7 @@ Struttura JSON:
       status: 'pending',
       trigger_type: 'manual',
       trigger_config: { thought, plan },
-      actions: plan.steps.map(s => ({ ...s })) as any,
+      actions: plan.steps as any,
       priority: 5,
       max_retries: 3,
       retry_count: 0
