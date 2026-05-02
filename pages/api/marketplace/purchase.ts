@@ -59,11 +59,15 @@ async function purchaseAgent(req: NextApiRequest, res: NextApiResponse) {
     // Concedi accesso
     await grantAccess(agentId, userId);
 
-    // Aggiorna vendite totali
-    await supabase
-      .from('lara_marketplace')
-      .update({ total_sales: supabase.raw('total_sales + 1') })
-      .eq('id', agentId);
+    // Aggiorna vendite totali (incremento fatto via read-then-write)
+    try {
+      const { data: current } = await supabase.from('lara_marketplace').select('total_sales').eq('id', agentId).single();
+      if (current) {
+        await supabase.from('lara_marketplace').update({ total_sales: (current.total_sales || 0) + 1 }).eq('id', agentId);
+      }
+    } catch {
+      // Ignora se tabella non esiste
+    }
 
     // Notifica creator (in produzione: email/Telegram)
     await notifyCreator(agent.creator_id, agentId, userId, price);
@@ -76,14 +80,16 @@ async function purchaseAgent(req: NextApiRequest, res: NextApiResponse) {
 }
 
 async function grantAccess(agentId: string, userId: string) {
-  await supabase.from('user_agents').insert({
-    user_id: userId,
-    agent_id: agentId,
-    access_type: 'purchased',
-    granted_at: new Date().toISOString()
-  }).catch(() => {
+  try {
+    await supabase.from('user_agents').insert({
+      user_id: userId,
+      agent_id: agentId,
+      access_type: 'purchased',
+      granted_at: new Date().toISOString()
+    });
+  } catch {
     // Tabella potrebbe non esistere
-  });
+  }
 }
 
 async function notifyCreator(creatorId: string, agentId: string, buyerId: string, price: number) {

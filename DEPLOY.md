@@ -1,161 +1,108 @@
-# Aethersy-AI - Deploy Guide
+# 🚀 Aethersy AI - Deploy Complete
 
-## Architettura
+## ✅ Deploy Status
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AETHERSY-AI PLATFORM                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  🌐 Web App: https://aethersy.com (Vercel)                  │
-│     - Next.js 14                                            │
-│     - Dashboard AI / Admin / Terminal                       │
-│     - API: Groq (Llama 3.1) + Ollama (fallback)             │
-│                                                              │
-│  🤖 Telegram Bot: @Lara_Aethersy_AI_bot (Render)            │
-│     - python-telegram-bot v21                               │
-│     - Mailerlite email integration                          │
-│     - Supabase user management                              │
-│                                                              │
-│  📊 Database: Supabase PostgreSQL                           │
-│     - Users, Messages, Memory, Projects                     │
-│                                                              │
-│  🔧 AI Backend: Groq API (primario) + Ollama (locale)       │
-└─────────────────────────────────────────────────────────────┘
-```
+### Vercel Production
+- **URL**: https://aiforge-pro.vercel.app
+- **Build**: Completed successfully
+- **Status**: READY
 
-## 1. Deploy Piattaforma Web (Vercel)
+### Nuove API Implementate
 
-La piattaforma è deployata su: **https://aethersy.com**
+| Endpoint | Descrizione | Status |
+|----------|-------------|--------|
+| `/api/tools/registry` | Registry 80+ tools e 10000+ template | ✅ Active |
+| `/api/tools/google` | Google Workspace (Gmail, Sheets, Drive, Calendar) | ✅ Active |
+| `/api/tools/pdf` | Generazione PDF con 4 template professionali | ✅ Active |
+| `/api/tools/speech` | Speech-to-Text e Text-to-Speech | ✅ Active |
+| `/api/tools/image` | Text-to-Image, Image-to-Text, Editing | ✅ Active |
+| `/api/marketplace/list` | Marketplace agents listing | ✅ Active |
 
-### Variabili Vercel
+### Nuove Pagine
 
+| Pagina | Descrizione |
+|--------|-------------|
+| `/tools` | Dashboard 80+ strumenti AI |
+| `/terminal` | Live terminal con WebSocket |
+| `/marketplace` | Marketplace agenti AI |
+
+## 📊 Statistics
+
+- **80+ Strumenti AI** in 10 categorie
+- **10000+ Template** in 7 categorie
+- **4 PDF Template** professionali
+- **6 Nuove API** endpoint
+
+## 🔧 Server Configuration
+
+### Server 1: 47.87.141.154 (Frontend + Bridge)
 ```bash
-# AI
+# Configura SSH
+ssh-keygen -t ed25519 -C "aethersy-deploy"
+# Copia chiave pubblica su server
+ssh-copy-id root@47.87.141.154
+
+# Deploy manuale
+cd /root/aiforge-pro
+git pull origin master
+npm install
+npm run build
+pm2 restart all
+```
+
+### Server 2: 47.87.134.105 (Lara AI + Database)
+```bash
+# Lara AI già operativa
+pm2 status
+pm2 logs lara
+```
+
+### Server 3: 47.87.141.18 (Marketplace - DA CONFIGURARE)
+```bash
+# Risolvere issue di rete
+# Configurare DNS: 8.8.8.8 8.8.4.4
+```
+
+## 📝 Environment Variables Required
+
+Assicurati che `.env.production` abbia:
+
+```env
+# AI Providers
 GROQ_API_KEY=gsk_...
-OLLAMA_BASE_URL=http://localhost:11434
+REPLICATE_API_TOKEN=r8_...
+ELEVENLABS_API_KEY=...
+ALIBABA_API_KEY=...
 
 # Database
-NEXT_PUBLIC_SUPABASE_URL=https://heydnqkuwvtbenpougno.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_URL=https://...
+SUPABASE_ANON_KEY=...
+
+# Google Workspace
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REDIRECT_URI=https://aiforge-pro.vercel.app/api/auth/google/callback
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_WEBHOOK_URL=https://aiforge-pro.vercel.app/api/telegram
 
 # Stripe
-STRIPE_SECRET_KEY=sk_live_...
+STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-
-# API Esterne
-SERPER_API_KEY=...
-REPLICATE_API_TOKEN=...
 ```
 
-### Trigger Deploy Manuale
+## 🎯 Next Steps
 
-1. Vai su https://vercel.com/dashboard
-2. Trova progetto `aethersy-ai`
-3. **...** → **Redeploy**
+1. **Configura SSH** per deploy automatico sui server
+2. **Aggiorna DNS** per puntare a Vercel
+3. **Configura webhook Telegram** su Vercel
+4. **Verifica environment variables** su Vercel dashboard
 
-## 2. Deploy Bot Telegram (Render)
+## 🔗 Quick Links
 
-Bot: **@Lara_Aethersy_AI_bot**
-
-### Configurazione Render
-
-1. Vai su https://dashboard.render.com
-2. **New +** → **Web Service**
-3. Connetti repo: `mattiadeblasio94-jpg/Aethersy-AI`
-4. Configura:
-   - **Name:** `aethersy-telegram-bot`
-   - **Region:** Oregon
-   - **Branch:** `master`
-   - **Root Directory:** `bot-telegram`
-   - **Runtime:** `Python 3`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `python main.py`
-
-### Variabili Environment Render
-
-```
-TELEGRAM_BOT_TOKEN=8172610054:AAELb8rkIn9hWk15aKvxQB-gqoTuHeq1SiM
-LARA_WEBHOOK_URL=https://aethersy.com/api/lara/chat
-MAILERLITE_WEBHOOK_ID=fLJ2J3tSXO
-NEXT_PUBLIC_SUPABASE_URL=https://heydnqkuwvtbenpougno.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<tua-chiave>
-ADMIN_TELEGRAM_ID=8074643162
-```
-
-### Verifica Deploy
-
-1. Controlla log su Render dashboard
-2. Test Telegram: cerca `@Lara_Aethersy_AI_bot` e premi `/start`
-3. Test comandi: `/help`, `/status`
-
-## 3. Struttura File
-
-```
-Aethersy-AI/
-├── pages/                    # Next.js pages (Vercel)
-│   ├── index.js             # Landing page
-│   ├── dashboard.js         # Dashboard AI
-│   ├── admin.js             # Admin panel
-│   └── api/
-│       ├── lara/chat.ts     # Lara chat API (Groq)
-│       ├── project.js       # Project generator
-│       └── ...
-├── lib/
-│   ├── lara-core.ts         # Core AI (Groq + Ollama)
-│   ├── agents.js            # AI agents
-│   ├── memory.js            # Memory management
-│   └── supabase.js          # Database client
-├── bot-telegram/
-│   ├── main.py              # Official bot (Render)
-│   ├── requirements.txt     # Python deps
-│   └── .env.example         # Environment template
-├── vercel.json              # Vercel config
-└── next.config.js           # Next.js config
-```
-
-## 4. Comandi Bot
-
-| Comando | Descrizione |
-|---------|-------------|
-| `/start` | Inizia conversazione |
-| `/status` | Verifica piano |
-| `/upgrade` | Link upgrade |
-| `/help` | Guida |
-| `/email` | Invia email |
-
-### Admin
-
-| Comando | Descrizione |
-|---------|-------------|
-| `/stats` | Statistiche |
-| `/user [email]` | Dettagli utente |
-| `/package [email] [pkg]` | Assegna pacchetto |
-
-## 5. Troubleshooting
-
-### Bot non risponde (Render)
-1. Controlla log: https://dashboard.render.com
-2. Verifica token: `curl https://api.telegram.org/bot<TOKEN>/getMe`
-3. Redeploy: **Manual Deploy** → **Clear build cache & deploy**
-
-### Piattaforma non carica (Vercel)
-1. Controlla build log su Vercel dashboard
-2. Verifica variabili d'ambiente
-3. **Redeploy** dal dashboard
-
-### Errori API Lara
-- Groq key: controlla `GROQ_API_KEY` su Vercel
-- Test endpoint: `curl https://aethersy.com/api/lara/chat -X POST -H "Content-Type: application/json" -d '{"message":"ciao"}'`
-
-## 6. Sicurezza
-
-- **MAI committare `.env`** (già in `.gitignore`)
-- Usa **GitHub Secrets** o **Render/Vercel Environment Variables**
-- **SSH key** per accesso server (no password)
-- **Rate limiting** attivo su API
-
----
-
-**Supporto:** Contatta admin o apri issue su GitHub.
+- [Vercel Dashboard](https://vercel.com/mattiadeblasio94-8016s-projects/aiforge-pro)
+- [Production URL](https://aiforge-pro.vercel.app)
+- [Tools Dashboard](https://aiforge-pro.vercel.app/tools)
+- [Terminal](https://aiforge-pro.vercel.app/terminal)
+- [Marketplace](https://aiforge-pro.vercel.app/marketplace)

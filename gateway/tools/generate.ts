@@ -123,7 +123,8 @@ export async function generateImage(options: GenerateImageOptions): Promise<Gene
     prompt,
     model,
     metadata: { style, size, steps, cfg, seed },
-    userId
+    userId,
+    createdAt: new Date().toISOString()
   });
 
   return {
@@ -196,7 +197,8 @@ export async function generateVideo(options: GenerateVideoOptions): Promise<Gene
     prompt,
     model,
     metadata: { duration, fps, resolution, image_url: imageUrl },
-    userId
+    userId,
+    createdAt: new Date().toISOString()
   });
 
   return {
@@ -265,7 +267,8 @@ export async function generateAudio(options: GenerateAudioOptions): Promise<Gene
     prompt,
     model,
     metadata: { genre, bpm, duration, stems },
-    userId
+    userId,
+    createdAt: new Date().toISOString()
   });
 
   return {
@@ -319,17 +322,19 @@ export async function generateText(
  * Salva contenuto generato nel database
  */
 async function saveContent(content: GeneratedContent & { userId: string }): Promise<void> {
-  await supabase.from('generated_content').insert({
-    user_id: content.userId,
-    content_type: content.type,
-    content_url: content.url,
-    prompt: content.prompt,
-    model_used: content.model,
-    metadata: content.metadata,
-    created_at: new Date().toISOString()
-  }).catch(() => {
+  try {
+    await supabase.from('generated_content').insert({
+      user_id: content.userId,
+      content_type: content.type,
+      content_url: content.url,
+      prompt: content.prompt,
+      model_used: content.model,
+      metadata: content.metadata,
+      created_at: new Date().toISOString()
+    });
+  } catch {
     // Tabella potrebbe non esistere, ignora
-  });
+  }
 }
 
 /**

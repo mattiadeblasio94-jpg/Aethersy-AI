@@ -279,11 +279,15 @@ export async function purchaseAgent(
 
   await grantAgentAccess(agentId, buyerId);
 
-  // Aggiorna vendite totali
-  await supabase
-    .from('lara_marketplace')
-    .update({ total_sales: supabase.raw('total_sales + 1') })
-    .eq('id', agentId);
+  // Aggiorna vendite totali (incremento fatto via RPC o ignora se tabella non esiste)
+  try {
+    const { data: current } = await supabase.from('lara_marketplace').select('total_sales').eq('id', agentId).single();
+    if (current) {
+      await supabase.from('lara_marketplace').update({ total_sales: (current.total_sales || 0) + 1 }).eq('id', agentId);
+    }
+  } catch {
+    // Ignora se tabella non esiste
+  }
 
   return { ok: true };
 }
@@ -292,14 +296,16 @@ export async function purchaseAgent(
  * Concede accesso ad agente
  */
 async function grantAgentAccess(agentId: string, userId: string): Promise<void> {
-  await supabase.from('user_agents').insert({
-    user_id: userId,
-    agent_id: agentId,
-    access_type: 'purchased',
-    granted_at: new Date().toISOString()
-  }).catch(() => {
+  try {
+    await supabase.from('user_agents').insert({
+      user_id: userId,
+      agent_id: agentId,
+      access_type: 'purchased',
+      granted_at: new Date().toISOString()
+    });
+  } catch {
     // Tabella potrebbe non esistere
-  });
+  }
 }
 
 /**

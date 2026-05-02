@@ -1,8 +1,5 @@
 {
   "buildCommand": "next build --no-lint",
-  "protectionBypass": {
-    "api": "enabled"
-  },
   "functions": {
     "pages/api/lara/chat.ts":           { "maxDuration": 60 },
     "pages/api/lara/chat.js":           { "maxDuration": 60 },
@@ -33,7 +30,12 @@
     "pages/api/cinema/generate.js":     { "maxDuration": 60 },
     "pages/api/cinema/status.js":       { "maxDuration": 15 },
     "pages/api/wiki/upload.js":         { "maxDuration": 30 },
-    "pages/api/tools/seo.js":           { "maxDuration": 60 }
+    "pages/api/tools/seo.js":           { "maxDuration": 60 },
+    "pages/api/tools/pdf.js":           { "maxDuration": 30 },
+    "pages/api/tools/google.js":        { "maxDuration": 30 },
+    "pages/api/tools/speech.js":        { "maxDuration": 60 },
+    "pages/api/tools/image.js":         { "maxDuration": 120 },
+    "pages/api/marketplace/list.js":    { "maxDuration": 30 }
   },
   "headers": [
     {

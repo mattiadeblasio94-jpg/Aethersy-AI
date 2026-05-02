@@ -65,7 +65,8 @@ export default function KnowledgeGraph({ notes, height = 400 }: KnowledgeGraphPr
       // Collega note ai tag
       note.tags?.forEach(tag => {
         if (!nodeMap.has(`tag-${tag}`)) {
-          const tagAngle = (2 * Math.PI * Array.from(tags).indexOf(tag)) / tags.length;
+          const tagsArray = Array.from(tags);
+          const tagAngle = (2 * Math.PI * tagsArray.indexOf(tag)) / tagsArray.length;
           nodeMap.set(`tag-${tag}`, {
             id: `tag-${tag}`,
             label: tag,

@@ -1,6 +1,6 @@
 /**
- * Aethersy Bridge - Ponte Telegram-Terminale WebSocket
- * Collega bot Telegram alla dashboard web in realtime
+ * Aethersy Bridge - Ponte Telegram-Terminale-Dashboard
+ * Sincronizzazione realtime tra Telegram Bot, Terminale AI e Dashboard Web
  */
 
 import TelegramBot from 'node-telegram-bot-api';
@@ -19,8 +19,8 @@ const supabase = createClient(
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN!, { polling: true });
 const io = new Server(3001, { cors: { origin: '*' } });
 
-// Cache sessioni attive
-const activeSessions = new Map<string, { chatId: number; statusMsg: any; userId: string }>();
+// Sessioni attive
+const sessions = new Map<string, { userId: string; chatId?: number }>();
 
 // Middleware di autorizzazione
 const checkUserAccess = async (telegramId: number) => {
@@ -30,23 +30,75 @@ const checkUserAccess = async (telegramId: number) => {
     .eq('telegram_chat_id', telegramId.toString())
     .single();
 
-  if (error || !data) return { allowed: false };
-  if (data.tokens_used >= data.tokens_limit) return { allowed: false, reason: 'limit' };
+  if (error || !data) return { allowed: false, plan: 'unknown' };
+  if (data.tokens_used >= data.tokens_limit) return { allowed: false, reason: 'limit', plan: data.plan };
   return { allowed: true, plan: data.plan };
 };
 
 // Log attività per dashboard realtime
-const logAgentAction = async (userId: string, action: string, status: string, payload: any) => {
-  await supabase.from('lara_logs').insert({
-    session_id: `tg-${Date.now()}`,
-    user_id: userId,
-    phase: 'act',
-    action,
-    input: payload,
-    status,
-    created_at: new Date().toISOString()
-  });
+const logAgentAction = async (userId: string, sessionId: string, action: string, status: string, payload: any) => {
+  try {
+    await supabase.from('lara_logs').insert({
+      session_id: sessionId,
+      user_id: userId,
+      phase: 'act',
+      action,
+      input: payload,
+      status,
+      created_at: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error('Log error:', e);
+  }
 };
+
+// Elaborazione con AI (Groq/Ollama)
+async function processWithAI(sessionId: string, userId: string, text: string, chatId: number, plan: string) {
+  try {
+    // Costruisci contesto da Obsidian
+    const { data: notes } = await supabase
+      .from('notes')
+      .select('title, content')
+      .eq('user_id', userId)
+      .limit(5);
+
+    // Chiama Groq per ragionamento
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: `Sei Aethersy AI, assistente per imprenditori. Piano utente: ${plan}. Usa note contestuali se utili.` },
+          { role: 'user', content: text }
+        ]
+      })
+    });
+
+    const response = await groqResponse.json();
+    const reply = response.choices?.[0]?.message?.content || 'Errore elaborazione.';
+
+    // Rispondi su Telegram
+    bot.sendMessage(chatId, reply);
+
+    // Aggiorna dashboard
+    io.emit('agent-action', {
+      sessionId,
+      type: 'response',
+      content: reply
+    });
+
+    // Log completamento
+    await logAgentAction(userId, sessionId, 'ai_response', 'completed', { reply });
+  } catch (error: any) {
+    await logAgentAction(userId, sessionId, 'ai_response', 'error', { error: error.message });
+    io.emit('agent-action', { sessionId, type: 'error', content: error.message });
+    bot.sendMessage(chatId, `❌ Errore: ${error.message}`);
+  }
+}
 
 // Gestione messaggi Telegram
 bot.on('message', async (msg) => {
@@ -96,100 +148,52 @@ bot.on('message', async (msg) => {
     .single();
 
   const effectiveUserId = user?.user_id || `tg-${chatId}`;
-
-  // Notifica inizio esecuzione
-  const statusMsg = await bot.sendMessage(chatId, '⚡ Elaboro...');
-
-  // Crea sessione
   const sessionId = `${effectiveUserId}-${Date.now()}`;
-  activeSessions.set(sessionId, { chatId, statusMsg, userId: effectiveUserId });
 
-  // Emetti evento per dashboard
-  io.emit('agent-start', {
+  // Log inizio azione
+  await logAgentAction(effectiveUserId, sessionId, 'telegram_message', 'thinking', { text, chatId });
+
+  // Notifica dashboard
+  io.emit('agent-action', {
     sessionId,
-    userId: effectiveUserId,
-    prompt: text,
-    platform: 'telegram',
-    timestamp: new Date().toISOString()
+    type: 'thinking',
+    content: `Ricevuto: "${text}"`
   });
 
-  await logAgentAction(effectiveUserId, 'telegram_message', 'thinking', { text, chatId });
+  // Se è comando bash esplicito (admin)
+  if (text.startsWith('!') && access.plan === 'admin') {
+    const command = text.slice(1);
+    const statusMsg = await bot.sendMessage(chatId, '⚡ Esecuzione comando...');
 
-  // Chiama AI server
-  try {
-    const aiUrl = process.env.LARA_WEBHOOK_URL || 'http://localhost:5001/chat';
-    const response = await fetch(aiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: text,
-        userId: effectiveUserId,
-        sessionId,
-        platform: 'telegram'
-      }),
-      timeout: 120000
-    });
+    const shell = spawn('bash', ['-c', command]);
 
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    // Stream output a dashboard
-    io.emit('terminal-output', {
-      sessionId,
-      content: data.response,
-      type: 'stdout',
-      timestamp: new Date().toISOString()
-    });
-
-    // Aggiorna log
-    await logAgentAction(effectiveUserId, 'telegram_message', 'completed', {
-      response: data.response,
-      model: data.model
-    });
-
-    // Rispondi su Telegram
-    await bot.editMessageText(
-      `✅ **Lara**\n\n${data.response.slice(0, 4000)}`,
-      {
-        chat_id: chatId,
-        message_id: statusMsg.message_id,
-        parse_mode: 'Markdown'
+    shell.stdout.on('data', (data) => {
+      const output = data.toString();
+      io.emit('terminal-output', { sessionId, content: output, type: 'stdout' });
+      if (output.length < 4000) {
+        bot.sendMessage(chatId, `\`\`\`${output}\`\`\``);
       }
-    );
-
-    // Completa sessione
-    io.emit('agent-complete', {
-      sessionId,
-      success: true,
-      output: data.response,
-      model: data.model,
-      timestamp: new Date().toISOString()
     });
 
-  } catch (error: any) {
-    await logAgentAction(effectiveUserId, 'telegram_message', 'error', { error: error.message });
-
-    io.emit('agent-complete', {
-      sessionId,
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
+    shell.stderr.on('data', (data) => {
+      io.emit('terminal-output', { sessionId, content: data.toString(), type: 'stderr' });
     });
 
-    await bot.editMessageText(
-      `❌ Errore: ${error.message}`,
-      { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: 'Markdown' }
-    );
+    shell.on('close', () => {
+      bot.editMessageText('✅ Completato', { chat_id: chatId, message_id: statusMsg.message_id });
+      io.emit('agent-action', { sessionId, type: 'completed' });
+      logAgentAction(effectiveUserId, sessionId, 'bash_command', 'completed', { command });
+    });
+    return;
   }
 
-  activeSessions.delete(sessionId);
+  // Altrimenti passa all'Agente Core per elaborazione AI
+  await processWithAI(sessionId, effectiveUserId, text, chatId, access.plan);
 });
 
 // Comando /config per admin
 bot.onText(/\/config (.+)/, async (msg, match) => {
+  if (!match) return;
   const chatId = msg.chat.id;
   const [key, ...valueParts] = match[1].split('=');
   const value = valueParts.join('=').trim();
@@ -214,9 +218,9 @@ bot.onText(/\/config (.+)/, async (msg, match) => {
 
 // Gestione comandi strutturati
 bot.onText(/\/note (.+)/, async (msg, match) => {
+  if (!match) return;
   const chatId = msg.chat.id;
   const title = match[1].trim();
-  const userId = msg.from?.id.toString() || 'unknown';
 
   bot.sendMessage(chatId, '📝 Inviami il contenuto della nota (invia "FINE" su riga singola per terminare)');
 

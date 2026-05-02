@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-12-18.acacia' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-03-25.dahlia' });
 
 export interface SubscriptionPlan {
   id: string;
@@ -193,7 +193,7 @@ export async function handleWebhook(signature: string, payload: Buffer): Promise
         if (userId) {
           await supabase.from('transactions').insert({
             user_id: userId,
-            stripe_payment_intent_id: invoice.payment_intent as string,
+            stripe_payment_intent_id: (invoice as any).payment_intent || invoice.id,
             amount: invoice.amount_paid! / 100,
             currency: invoice.currency.toLowerCase(),
             status: 'succeeded',
@@ -212,7 +212,7 @@ export async function handleWebhook(signature: string, payload: Buffer): Promise
         if (userId) {
           await supabase.from('transactions').insert({
             user_id: userId,
-            stripe_payment_intent_id: invoice.payment_intent as string,
+            stripe_payment_intent_id: (invoice as any).payment_intent || invoice.id,
             amount: invoice.amount_due! / 100,
             currency: invoice.currency.toLowerCase(),
             status: 'failed',
@@ -325,11 +325,12 @@ export async function getSubscriptionStatus(userId: string): Promise<{
 
   try {
     const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
+    const sub = subscription as any;
 
     return {
       plan: user.plan_level || 'free',
       status: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+      currentPeriodEnd: new Date((sub.current_period_end || 0) * 1000).toISOString(),
       cancelAtPeriodEnd: subscription.cancel_at_period_end
     };
   } catch (error) {

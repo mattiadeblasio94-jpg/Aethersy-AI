@@ -257,16 +257,22 @@ export async function getTags(userId: string): Promise<string[]> {
  * Aggiorna storage utente
  */
 async function updateUserStorage(userId: string, deltaBytes: number): Promise<void> {
-  await supabase.rpc('increment_storage', {
-    user_id_filter: userId,
-    delta: deltaBytes
-  }).catch(() => {
+  try {
+    await supabase.rpc('increment_storage', {
+      user_id_filter: userId,
+      delta: deltaBytes
+    });
+  } catch {
     // Fallback se la funzione RPC non esiste
-    supabase
-      .from('lara_users')
-      .update({ storage_used: supabase.raw(`storage_used + ${deltaBytes}`) })
-      .eq('user_id', userId);
-  });
+    try {
+      const { data: current } = await supabase.from('lara_users').select('storage_used').eq('user_id', userId).single();
+      if (current) {
+        await supabase.from('lara_users').update({ storage_used: (current.storage_used || 0) + deltaBytes }).eq('user_id', userId);
+      }
+    } catch {
+      // Ignora se tabella non esiste
+    }
+  }
 }
 
 /**

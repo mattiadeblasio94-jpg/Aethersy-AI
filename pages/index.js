@@ -376,9 +376,12 @@ export default function Home() {
             <button onClick={() => { setTab('register'); setModal(true); }} style={{ padding: '1rem 2.5rem', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', color: '#fff', border: 'none', borderRadius: 14, cursor: 'pointer', fontSize: '1.05rem', fontWeight: 800, fontFamily: 'inherit', boxShadow: '0 4px 30px rgba(124,58,237,0.5)', transition: 'all 0.2s' }}>
               🚀 Inizia gratis →
             </button>
-            <a href={BOT_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '1rem 2rem', background: 'rgba(0,136,204,0.15)', border: '1px solid rgba(0,136,204,0.4)', color: '#38bdf8', borderRadius: 14, fontSize: '1rem', fontWeight: 700 }}>
-              <TelegramIcon /> @{BOT_USERNAME}
-            </a>
+            <Link href="/terminal" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '1rem 2rem', background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.4)', color: '#22d3ee', borderRadius: 14, fontSize: '1rem', fontWeight: 700 }}>
+              🖥️ Terminale Live
+            </Link>
+            <Link href="/marketplace" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '1rem 2rem', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', color: '#34d399', borderRadius: 14, fontSize: '1rem', fontWeight: 700 }}>
+              🤖 Marketplace
+            </Link>
           </div>
           <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             {['No carta di credito', 'Cancella quando vuoi', 'Setup in 30 secondi'].map(t => (

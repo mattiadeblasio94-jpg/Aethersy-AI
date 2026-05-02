@@ -53,7 +53,7 @@ export async function createLead(userId: string, options: CreateLeadOptions): Pr
     name: options.name || options.email.split('@')[0],
     company: options.company,
     status: options.status || 'new',
-    value_potential: options.value_potential,
+    value_potential: options.valuePotential,
     source: options.source || 'manual',
     notes: options.notes,
     metadata: options.metadata,
