@@ -167,17 +167,12 @@ export default async function handler(req, res) {
       return
     }
 
-    // For AI chat: send typing, respond OK immediately, then process in background
+    // AI chat: wait for response before sending (Vercel kills background tasks)
     sendTyping(chatId)
-    res.status(200).send('OK')
+    const response = await askAI(text)
+    sendTg(chatId, response)
 
-    // Process AI in background (after response is sent)
-    askAI(text).then(response => {
-      sendTg(chatId, response)
-    }).catch(e => {
-      console.error('AI error:', e)
-      sendTg(chatId, "❌ Scusa, ho avuto un problema. Riprova!")
-    })
+    res.status(200).send('OK')
 
   } catch (e) {
     console.error('[LARA] Error:', e)
