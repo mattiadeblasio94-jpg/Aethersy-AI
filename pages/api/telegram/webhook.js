@@ -4,7 +4,6 @@
  */
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
-const ALIBABA_API_KEY = process.env.ALIBABA_API_KEY
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 
 const LARA_SYSTEM_PROMPT = `Sei Lara, AI Agent senior di Aethersy OS.
@@ -66,35 +65,8 @@ function sendTyping(chatId) {
   }).catch(() => {})
 }
 
-// AI call to Alibaba/Groq
+// AI call to Groq only
 async function askAI(message) {
-  // Try Alibaba
-  try {
-    const res = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ALIBABA_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'qwen-plus',
-        messages: [
-          { role: 'system', content: LARA_SYSTEM_PROMPT },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      })
-    })
-    if (res.ok) {
-      const data = await res.json()
-      return data.choices[0].message.content
-    }
-  } catch (e) {
-    console.log('Alibaba fail:', e.message)
-  }
-
-  // Fallback Groq
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -120,7 +92,7 @@ async function askAI(message) {
     console.log('Groq fail:', e.message)
   }
 
-  return "❌ Scusa, ho problemi di connessione. Riprova tra un momento!"
+  return "❌ Scusa, ho problemi di connessione. Riprova!"
 }
 
 export default async function handler(req, res) {
