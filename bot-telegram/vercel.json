@@ -1,0 +1,9 @@
+{
+  "experimentalServices": {
+    "api": {
+      "runtime": "python",
+      "entrypoint": "api/index.py",
+      "mount": "/api"
+    }
+  }
+}

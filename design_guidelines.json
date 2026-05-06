@@ -1,0 +1,136 @@
+{
+  "project_name": "AI Entrepreneurship 360",
+  "theme": "dark",
+  "archetype": "Archetype 5 (Jewel & Luxury) with a Tech Edge",
+  "design_philosophy": "A high-end, futuristic dark-mode dashboard inspired by aethersy.com. Emphasizes clean aesthetics, deep blacks, subtle glassmorphism, precise grids, and sharp electric cyan accents. Avoids standard 'AI slop' colors like purple/violet and generic fonts like Inter/Roboto.",
+  "colors": {
+    "background": "#050505",
+    "surface": "#0D0D0D",
+    "surface_hover": "#171717",
+    "border": "rgba(255, 255, 255, 0.08)",
+    "border_hover": "rgba(0, 240, 255, 0.3)",
+    "primary": "#00F0FF",
+    "primary_glow": "rgba(0, 240, 255, 0.2)",
+    "secondary": "#27272A",
+    "accent_success": "#00FFA3",
+    "accent_warning": "#FFB800",
+    "accent_danger": "#FF3B30",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#A1A1AA",
+    "text_tertiary": "#71717A"
+  },
+  "typography": {
+    "heading_font": "Cabinet Grotesk",
+    "body_font": "Manrope",
+    "mono_font": "JetBrains Mono",
+    "banned_fonts": ["Inter", "Roboto", "Open Sans"],
+    "scales": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-bold",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-semibold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-medium",
+      "h4": "text-lg font-medium",
+      "body": "text-base font-normal leading-relaxed",
+      "small": "text-sm text-text_secondary font-medium tracking-wide",
+      "overline": "text-xs uppercase tracking-widest text-text_tertiary font-bold"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-6 md:p-8",
+    "gap_tight": "gap-4",
+    "gap_base": "gap-6",
+    "gap_loose": "gap-12",
+    "border_radius": {
+      "base": "rounded-xl",
+      "small": "rounded-md",
+      "full": "rounded-full"
+    },
+    "grid_strategy": "Control Room Protocol: Tight bento grid layouts (grid-cols-1 md:grid-cols-3 lg:grid-cols-4), ensuring full height utilization using h-full. Widgets align perfectly without jagged edges."
+  },
+  "surfaces_and_textures": {
+    "cards": "Flat background (#0D0D0D) with 1px solid border (white/8). On hover: slight lift (-translate-y-1), subtle inner glow or border glow (cyan/30).",
+    "header_nav": "Crystal Glassmorphism: backdrop-blur-xl bg-black/60 with a delicate 1px bottom border (white/10).",
+    "floating_elements": "Drop-shadow-[0_8px_32px_rgba(0,0,0,0.4)] with white/10 border.",
+    "background_texture": "Use a very subtle grid or noise overlay on the deepest background to avoid pure digital flatness."
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-black font-semibold rounded-md px-4 py-2 hover:bg-[#33F3FF] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.2)]",
+      "secondary": "bg-surface border border-white/10 text-white rounded-md px-4 py-2 hover:bg-surface_hover transition-colors",
+      "ghost": "text-text_secondary hover:text-white hover:bg-white/5 px-4 py-2 rounded-md transition-colors"
+    },
+    "inputs": "bg-black border border-white/10 text-white rounded-md px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary transition-all",
+    "sidebar": "Fixed w-64 h-screen border-r border-white/10 bg-[#050505] flex flex-col pt-6 pb-6",
+    "tables": "Shadcn Table with text-sm, border-b border-white/5 on rows, text-text_secondary headers",
+    "badges": "bg-white/5 border border-white/10 text-xs px-2 py-1 rounded-full text-text_secondary"
+  },
+  "motion_and_interactions": {
+    "hover_state": "All interactive elements must explicitly change state on hover (e.g., text brightens to white, borders glow).",
+    "transitions": "transition-all duration-300 ease-in-out",
+    "page_load": "Framer Motion staggered fade-in up (y: 10, opacity: 0 -> 1) for dashboard grids."
+  },
+  "pages_and_features": {
+    "global": {
+      "layout": "Sidebar on left (collapsible on mobile), Top Header (glassmorphic) with search, notifications, and user avatar. Main content area fills remaining space.",
+      "icons": "lucide-react (stroke-width 1.5)"
+    },
+    "login_register": {
+      "layout": "Split screen or centered glass card over abstract background.",
+      "visuals": "Use image `https://images.unsplash.com/photo-1759338245039-906f7558e743?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwyfHxkYXJrJTIwYWJzdHJhY3QlMjBtaW5pbWFsJTIwdGV4dHVyZXxlbnwwfHx8fDE3Nzc5OTg4MTh8MA&ixlib=rb-4.1.0&q=85` as full screen background with black overlay."
+    },
+    "dashboard_home": {
+      "layout": "Top row: 4 KPI cards (Stats, % changes in Jade Green/Red). Middle: Main line chart spanning 3 cols, Activity feed spanning 1 col. Bottom: Data tables."
+    },
+    "ai_web_research": {
+      "layout": "2-column layout. Left: Query parameters, strict form fields. Right: Real-time streaming results area (markdown rendered text, skeleton loading state)."
+    },
+    "ai_business_plan": {
+      "layout": "Left inner-nav for sections (Exec Summary, Market Analysis, etc.). Right: WYSIWYG or Markdown editor view. Top right: Export to PDF/Docx buttons."
+    },
+    "ai_smart_chat": {
+      "layout": "Left pane: Chat history threads. Main pane: Chat bubbles (User: bordered glass card, AI: seamless background). Input pinned at bottom with a glowing 'Send' button."
+    },
+    "code_generator": {
+      "layout": "Split pane. Left: Prompt text area. Right: Monaco editor or syntax-highlighted block displaying generated code with copy button and language selector."
+    },
+    "crm_lead_management": {
+      "layout": "Kanban board view (horizontal scrolling columns) for lead stages. Clicking a card opens a shadcn Sheet (drawer) from the right with lead details."
+    },
+    "finance_crypto_tracker": {
+      "layout": "Top: Horizontal scrolling list of crypto price cards with mini sparkline charts. Below: Large interactive candlestick or area chart with volume data."
+    },
+    "email_marketing_ai": {
+      "layout": "Timeline view of email sequences. Right pane showing template preview. Status indicators (Sent, Draft, Scheduled)."
+    },
+    "funnel_builder": {
+      "layout": "Full canvas feel. Use `bg-[radial-gradient(#ffffff22_1px,transparent_1px)]` for a dotted background. Nodes represent funnel steps connected by lines."
+    },
+    "telegram_bot": {
+      "layout": "Status overview card (Active/Offline) at top. Below: split view with Bot configuration form and a terminal-styled window showing live message logs."
+    }
+  },
+  "assets": {
+    "backgrounds": [
+      {
+        "url": "https://images.unsplash.com/photo-1759338245039-906f7558e743?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwyfHxkYXJrJTIwYWJzdHJhY3QlMjBtaW5pbWFsJTIwdGV4dHVyZXxlbnwwfHx8fDE3Nzc5OTg4MTh8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Dark metallic curved surface, use for login background"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1762417108285-3dcef5ae3dc7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwzfHxkYXJrJTIwYWJzdHJhY3QlMjBtaW5pbWFsJTIwdGV4dHVyZXxlbnwwfHx8fDE3Nzc5OTg4MTh8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract dark textured surface, use as subtle overlay pattern"
+      }
+    ],
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1769636929388-99eff95d3bf1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxNzV8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGhlYWRzaG90fGVufDB8fHx8MTc3Nzk1MzQzNHww&ixlib=rb-4.1.0&q=85",
+        "description": "User profile avatar"
+      },
+      {
+        "url": "https://images.pexels.com/photos/14585727/pexels-photo-14585727.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "User profile avatar alternative"
+      }
+    ]
+  },
+  "testing": {
+    "required_attributes": "All interactive and key informational elements MUST include a `data-testid` attribute (e.g., `data-testid='login-submit-button'`, `data-testid='sidebar-nav-dashboard'`)."
+  }
+}
