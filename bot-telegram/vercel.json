@@ -1,9 +1,15 @@
 {
-  "experimentalServices": {
-    "api": {
-      "runtime": "python",
-      "entrypoint": "api/index.py",
-      "mount": "/api"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ]
 }
