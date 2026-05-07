@@ -55,7 +55,28 @@ async function callLLM(payload: any) {
   return data.choices?.[0]?.message?.content;
 }
 
-export async function runMultiAgentPipeline(userMessages: ChatMessage[]) {
+function extractIssuesFromTesterPlan(testerPlan: string): { title: string; body: string }[] {
+  try {
+    const parsed = JSON.parse(testerPlan);
+    if (Array.isArray(parsed)) {
+      return parsed.map((test: any) => ({
+        title: test.title ?? test.name ?? "Test failed",
+        body: test.description ?? test.reason ?? JSON.stringify(test)
+      }));
+    }
+    if (parsed.tests && Array.isArray(parsed.tests)) {
+      return parsed.tests.map((test: any) => ({
+        title: test.title ?? test.name ?? "Test failed",
+        body: test.description ?? test.reason ?? JSON.stringify(test)
+      }));
+    }
+    return [{ title: "Test plan issues", body: testerPlan }];
+  } catch {
+    return [{ title: "Test plan issues", body: testerPlan }];
+  }
+}
+
+export async function runMultiAgentPipeline(userMessages: ChatMessage[], options?: { projectId?: string; ownerId?: string }) {
   const architectPrompt: ChatMessage = {
     role: "system",
     content: `Sei Architect‑AI. Produci una SPEC tecnica ad alto livello dell'app.`
@@ -92,6 +113,15 @@ export async function runMultiAgentPipeline(userMessages: ChatMessage[]) {
       { role: "assistant", content: coderPlan }
     ]
   });
+
+  if (options?.projectId && options?.ownerId) {
+    const issues = extractIssuesFromTesterPlan(testerPlan);
+    await notifyIssuesViaIntegrations({
+      projectId: options.projectId,
+      ownerId: options.ownerId,
+      issues
+    });
+  }
 
   return {
     architectSpec,
