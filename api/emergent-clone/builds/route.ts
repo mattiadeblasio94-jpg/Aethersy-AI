@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../lib/emergent-clone/supabase";
 import { generateAppSpec } from "../../../lib/emergent-clone/llm";
 import { materializeApp } from "../../../lib/emergent-clone/builder";
+import { initAndPushRepo } from "../../../lib/emergent-clone/git";
+import { triggerVercelDeploy, triggerFlyDeploy } from "../../../lib/emergent-clone/deploy";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -23,7 +25,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { projectId } = body;
+  const { projectId, provider = "vercel" } = body;
 
   const { data: messages, error: tasksError } = await supabaseAdmin
     .from("tasks")
@@ -40,6 +42,16 @@ export async function POST(req: NextRequest) {
     content: m.content
   }));
 
+  const { data: project, error: projectError } = await supabaseAdmin
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .single();
+
+  if (projectError || !project) {
+    return NextResponse.json({ error: projectError?.message ?? "Project not found" }, { status: 404 });
+  }
+
   const { data: buildRow, error: buildError } = await supabaseAdmin
     .from("builds")
     .insert({ project_id: projectId, status: "running" })
@@ -52,18 +64,39 @@ export async function POST(req: NextRequest) {
 
   try {
     const spec = await generateAppSpec(chat as any);
-    const result = await materializeApp(spec as any);
+    const { path: localPath } = await materializeApp(spec as any);
+
+    const { repoUrl } = await initAndPushRepo(localPath, spec.name || project.name);
+
+    let dashboardUrl: string | null = null;
+    if (provider === "vercel") {
+      const res = await triggerVercelDeploy({
+        projectName: spec.name || project.name,
+        repoUrl
+      });
+      dashboardUrl = res.dashboardUrl;
+    } else if (provider === "fly") {
+      const res = await triggerFlyDeploy({
+        appName: spec.name || project.name,
+        repoUrl
+      });
+      dashboardUrl = res.dashboardUrl;
+    }
 
     await supabaseAdmin
       .from("builds")
       .update({
         status: "success",
-        logs: "Build completed",
-        artifact_url: result.path
+        logs: `Build OK. Repo: ${repoUrl} - Dashboard: ${dashboardUrl}`,
+        artifact_url: repoUrl
       })
       .eq("id", buildRow.id);
 
-    return NextResponse.json({ buildId: buildRow.id, artifactPath: result.path });
+    return NextResponse.json({
+      buildId: buildRow.id,
+      repoUrl,
+      dashboardUrl
+    });
   } catch (e: any) {
     await supabaseAdmin
       .from("builds")
