@@ -17,6 +17,8 @@ export const supabaseAdmin = createClient(
 );
 
 // Types
+export type ProjectStatus = "idle" | "building" | "deployed" | "error";
+
 export interface User {
   id: string;
   email: string;
@@ -28,22 +30,24 @@ export interface Project {
   owner_id: string;
   name: string;
   description: string | null;
-  status: string;
+  status: ProjectStatus;
   created_at: string;
 }
 
-export interface Task {
+export interface TaskMessage {
   id: string;
   project_id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   created_at: string;
 }
 
+export type BuildStatus = "pending" | "running" | "success" | "failed";
+
 export interface Build {
   id: string;
   project_id: string;
-  status: 'pending' | 'running' | 'success' | 'failed';
+  status: BuildStatus;
   logs: string | null;
   artifact_url: string | null;
   created_at: string;
@@ -57,7 +61,7 @@ export async function getProjects(userId: string) {
     .eq('owner_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  return data as Project[];
 }
 
 export async function getProject(id: string, userId: string) {
@@ -68,7 +72,7 @@ export async function getProject(id: string, userId: string) {
     .eq('owner_id', userId)
     .single();
   if (error) throw error;
-  return data;
+  return data as Project;
 }
 
 export async function createProject(project: Omit<Project, 'id' | 'created_at'>) {
@@ -78,7 +82,7 @@ export async function createProject(project: Omit<Project, 'id' | 'created_at'>)
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Project;
 }
 
 export async function updateProject(id: string, updates: Partial<Project>) {
@@ -89,7 +93,7 @@ export async function updateProject(id: string, updates: Partial<Project>) {
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Project;
 }
 
 export async function deleteProject(id: string) {
@@ -108,17 +112,17 @@ export async function getTasks(projectId: string) {
     .eq('project_id', projectId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  return data as TaskMessage[];
 }
 
-export async function createTask(task: Omit<Task, 'id' | 'created_at'>) {
+export async function createTask(task: Omit<TaskMessage, 'id' | 'created_at'>) {
   const { data, error } = await supabase
     .from('tasks')
     .insert([task])
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as TaskMessage;
 }
 
 // Builds
@@ -129,7 +133,7 @@ export async function getBuilds(projectId: string) {
     .eq('project_id', projectId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data;
+  return data as Build[];
 }
 
 export async function createBuild(build: Omit<Build, 'id' | 'created_at'>) {
@@ -139,7 +143,7 @@ export async function createBuild(build: Omit<Build, 'id' | 'created_at'>) {
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Build;
 }
 
 export async function updateBuild(id: string, updates: Partial<Build>) {
@@ -150,5 +154,5 @@ export async function updateBuild(id: string, updates: Partial<Build>) {
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return data as Build;
 }
