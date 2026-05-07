@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Header } from './components/layout/Header'
-import { Sidebar } from './components/sidebar/Sidebar'
-import { ProjectList } from './components/project-list/ProjectList'
-import { Workspace } from './components/workspace/Workspace'
-import { ChatPanel } from './components/chat/ChatPanel'
-import { TerminalPanel } from './components/terminal/TerminalPanel'
-import { Project, Task, Build, Message } from './lib/types'
-import { generateChatCompletion } from './lib/llm'
+import { Header } from './emergent-clone-components/layout/Header'
+import { Sidebar } from './emergent-clone-components/sidebar/Sidebar'
+import { ProjectList } from './emergent-clone-components/project-list/ProjectList'
+import { Workspace } from './emergent-clone-components/workspace/Workspace'
+import { ChatPanel } from './emergent-clone-components/chat/ChatPanel'
+import { TerminalPanel } from './emergent-clone-components/terminal/TerminalPanel'
+import { Project, Task, Build, Message } from './emergent-clone-lib/types'
+import { generateChatCompletion } from './emergent-clone-lib/llm'
 
 export default function EmergentClonePage() {
   const [activeTab, setActiveTab] = useState('projects')
@@ -25,7 +25,7 @@ export default function EmergentClonePage() {
 
   const loadProjects = async () => {
     try {
-      const res = await fetch('/emergent-clone/api/projects')
+      const res = await fetch('/api/emergent-clone/projects')
       const data = await res.json()
       setProjects(data)
     } catch (e) { console.error('Failed to load projects:', e) }
@@ -34,8 +34,8 @@ export default function EmergentClonePage() {
   const loadProjectData = async (projectId: string) => {
     try {
       const [tasksRes, buildsRes] = await Promise.all([
-        fetch(`/emergent-clone/api/tasks?projectId=${projectId}`),
-        fetch(`/emergent-clone/api/builds?projectId=${projectId}`),
+        fetch(`/api/emergent-clone/tasks?projectId=${projectId}`),
+        fetch(`/api/emergent-clone/builds?projectId=${projectId}`),
       ])
       setTasks(await tasksRes.json())
       setBuilds(await buildsRes.json())
@@ -46,7 +46,7 @@ export default function EmergentClonePage() {
     const name = prompt('Project name:')
     if (!name) return
     try {
-      const res = await fetch('/emergent-clone/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description: 'Created with AI' }) })
+      const res = await fetch('/api/emergent-clone/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description: 'Created with AI' }) })
       const project = await res.json()
       setProjects([...projects, project])
       setActiveProjectId(project.id)
@@ -56,7 +56,7 @@ export default function EmergentClonePage() {
 
   const handleDeleteProject = async (id: string) => {
     try {
-      await fetch(`/emergent-clone/api/projects/${id}`, { method: 'DELETE' })
+      await fetch(`/api/emergent-clone/projects/${id}`, { method: 'DELETE' })
       setProjects(projects.filter((p) => p.id !== id))
       if (activeProjectId === id) { setActiveProjectId(undefined); setTasks([]); setBuilds([]) }
       addTerminalMessage(`Deleted project: ${id}`)
@@ -74,7 +74,7 @@ export default function EmergentClonePage() {
     setIsBuilding(true)
     addTerminalMessage('Starting build...')
     try {
-      const res = await fetch('/emergent-clone/api/builds', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: activeProjectId, task_id: 'manual', prompt: 'Build the current project' }) })
+      const res = await fetch('/api/emergent-clone/builds', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: activeProjectId, task_id: 'manual', prompt: 'Build the current project' }) })
       const result = await res.json()
       setBuilds([...builds, result])
       addTerminalMessage(result.success ? 'Build completed!' : `Build failed: ${result.error}`)
