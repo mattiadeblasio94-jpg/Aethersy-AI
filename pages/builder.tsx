@@ -20,8 +20,23 @@ export default function BuilderPage() {
   const [terminalOutput, setTerminalOutput] = useState<string[]>([])
   const [isBuilding, setIsBuilding] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [connections, setConnections] = useState<any[]>([])
+  const [providers, setProviders] = useState<any[]>([])
 
   useEffect(() => { loadProjects() }, [])
+
+  useEffect(() => {
+    if (!activeProjectId) return
+    fetch(`/api/emergent-clone/integrations/connections?projectId=${activeProjectId}`)
+      .then(r => r.json())
+      .then(setConnections)
+  }, [activeProjectId])
+
+  useEffect(() => {
+    fetch('/api/emergent-clone/integrations/providers')
+      .then(r => r.json())
+      .then(setProviders)
+  }, [])
 
   const loadProjects = async () => {
     try {
@@ -102,6 +117,15 @@ export default function BuilderPage() {
   const addTerminalMessage = (msg: string) => setTerminalOutput((prev) => [...prev, msg])
   const activeProject = projects.find((p) => p.id === activeProjectId) || null
 
+  const handleUpdateConnectionMetadata = async (connectionId: string, metadata: any) => {
+    await fetch('/api/emergent-clone/integrations/connections/update-metadata', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ connectionId, metadata })
+    })
+    setConnections(connections.map(c => c.id === connectionId ? { ...c, metadata } : c))
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -115,6 +139,74 @@ export default function BuilderPage() {
         )}
         {activeTab === 'chat' && <ChatPanel messages={chatMessages} onSendMessage={handleSendMessage} isSending={isSending} />}
         {activeTab === 'terminal' && <TerminalPanel output={terminalOutput} />}
+        {activeTab === 'integrations' && (
+          <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold">Connected</h2>
+              <div className="space-y-2">
+                {connections.map(c => (
+                  <div key={c.id} className="border border-slate-800 rounded-md p-3 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{c.display_name}</span>
+                      <span className="text-slate-500">{c.integration_providers?.[0]?.name ?? c.provider_slug}</span>
+                    </div>
+                    {c.provider_slug === 'notion' && (
+                      <div className="space-y-1">
+                        <label className="block text-[10px] uppercase text-slate-500">Default database ID</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+                          defaultValue={c.metadata?.default_database_id ?? ''}
+                          onBlur={async e => {
+                            const value = e.target.value.trim()
+                            await handleUpdateConnectionMetadata(c.id, { ...c.metadata, default_database_id: value })
+                          }}
+                          placeholder="es. 1234abcd-..."
+                        />
+                      </div>
+                    )}
+                    {c.provider_slug === 'slack' && (
+                      <div className="space-y-1">
+                        <label className="block text-[10px] uppercase text-slate-500">Default channel</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+                          defaultValue={c.metadata?.default_channel ?? ''}
+                          onBlur={async e => {
+                            const value = e.target.value.trim()
+                            await handleUpdateConnectionMetadata(c.id, { ...c.metadata, default_channel: value })
+                          }}
+                          placeholder="#general"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {connections.length === 0 && (
+                  <p className="text-xs text-slate-500">Nessuna integrazione collegata a questo progetto.</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold">Available providers</h2>
+              <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                {providers.map(p => (
+                  <button
+                    key={p.id}
+                    className="w-full text-left border border-slate-800 rounded-md p-3 text-xs hover:border-accent/60"
+                    onClick={() => {
+                      const startUrl = `/api/oauth/${p.slug}/start?projectId=${activeProjectId || 'user'}&ownerId=user`
+                      window.open(startUrl, '_blank')
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{p.name}</span>
+                      <span className="text-slate-500">{p.category}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

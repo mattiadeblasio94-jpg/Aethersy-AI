@@ -1,5 +1,5 @@
 import React from 'react'
-import { Folder, Terminal, MessageSquare, Plus } from 'lucide-react'
+import { Folder, Terminal, MessageSquare, Plus, Plug } from 'lucide-react'
 
 interface SidebarProps {
   activeTab: string
@@ -12,6 +12,7 @@ export function Sidebar({ activeTab, onTabChange, onNewProject }: SidebarProps) 
     { id: 'projects', icon: Folder, label: 'Projects' },
     { id: 'terminal', icon: Terminal, label: 'Terminal' },
     { id: 'chat', icon: MessageSquare, label: 'Chat' },
+    { id: 'integrations', icon: Plug, label: 'Integrations' },
   ]
   return (
     <aside className="w-16 border-r border-border flex flex-col items-center py-4 gap-4">
