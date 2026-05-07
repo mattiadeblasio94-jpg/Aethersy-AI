@@ -1,4 +1,45 @@
 import type { ChatMessage } from "./llm";
+import { supabaseAdmin } from "./supabase";
+import { getIntegration, getConnectionById } from "./integrations/core";
+
+export async function notifyIssuesViaIntegrations(params: {
+  projectId: string;
+  ownerId: string;
+  issues: { title: string; body: string }[];
+}) {
+  const { data: connections } = await supabaseAdmin
+    .from("integration_connections")
+    .select("*, integration_providers(slug)")
+    .eq("project_id", params.projectId);
+
+  if (!connections || !connections.length) return;
+
+  for (const issue of params.issues) {
+    for (const conn of connections) {
+      const slug = conn.integration_providers.slug as any;
+      const handler = getIntegration(slug);
+      if (!handler?.send) continue;
+
+      const ctx = await getConnectionById(conn.id);
+      if (!ctx) continue;
+
+      if (slug === "github") {
+        await handler.send(ctx, {
+          action: "create_issue",
+          owner: conn.metadata?.owner,
+          repo: conn.metadata?.repo,
+          data: issue
+        });
+      }
+
+      if (slug === "slack" || slug === "telegram" || slug === "whatsapp") {
+        await handler.send(ctx, {
+          text: `New issue found: ${issue.title}\n\n${issue.body}`
+        });
+      }
+    }
+  }
+}
 
 async function callLLM(payload: any) {
   const res = await fetch(process.env.LLM_API_URL!, {
