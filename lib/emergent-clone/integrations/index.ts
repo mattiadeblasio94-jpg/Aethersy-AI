@@ -5,6 +5,7 @@ import { GithubIntegration } from "./github";
 import { GoogleIntegration } from "./google";
 import { AirtableIntegration } from "./airtable";
 import { SlackIntegration } from "./slack";
+import { NotionIntegration } from "./notion";
 import {
   AsanaIntegration,
   BasecampIntegration,
@@ -24,7 +25,6 @@ import {
   LinearIntegration,
   LinkedInIntegration,
   MicrosoftTeamsIntegration,
-  NotionIntegration,
   OutlookIntegration,
   PineconeIntegration,
   SplitwiseIntegration,
