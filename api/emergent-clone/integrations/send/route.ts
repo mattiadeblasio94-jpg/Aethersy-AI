@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getIntegration, getConnectionById } from "@/lib/emergent-clone/integrations/core";
+import { getIntegration, getConnectionById } from "../../../../lib/emergent-clone/integrations/core";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
