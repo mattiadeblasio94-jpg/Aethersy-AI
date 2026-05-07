@@ -10,7 +10,7 @@ import { TerminalPanel } from '../components/emergent-clone/terminal/TerminalPan
 import { Project, Task, Build, Message } from '../lib/emergent-clone/types'
 import { generateChatCompletion } from '../lib/emergent-clone/llm'
 
-export default function EmergentClonePage() {
+export default function BuilderPage() {
   const [activeTab, setActiveTab] = useState('projects')
   const [projects, setProjects] = useState<Project[]>([])
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>()
