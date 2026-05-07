@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/emergent-clone/supabase";
+import { supabaseAdmin } from "../../../../lib/emergent-clone/supabase";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const { data, error } = await supabaseAdmin
