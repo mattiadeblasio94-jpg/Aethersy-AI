@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { Header } from './components/layout/Header'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { ProjectList } from './components/project-list/ProjectList'
 import { Workspace } from './components/workspace/Workspace'
@@ -20,19 +21,14 @@ export default function EmergentClonePage() {
   const [isBuilding, setIsBuilding] = useState(false)
   const [isSending, setIsSending] = useState(false)
 
-  // Load projects on mount
-  useEffect(() => {
-    loadProjects()
-  }, [])
+  useEffect(() => { loadProjects() }, [])
 
   const loadProjects = async () => {
     try {
       const res = await fetch('/emergent-clone/api/projects')
       const data = await res.json()
       setProjects(data)
-    } catch (e) {
-      console.error('Failed to load projects:', e)
-    }
+    } catch (e) { console.error('Failed to load projects:', e) }
   }
 
   const loadProjectData = async (projectId: string) => {
@@ -43,46 +39,28 @@ export default function EmergentClonePage() {
       ])
       setTasks(await tasksRes.json())
       setBuilds(await buildsRes.json())
-    } catch (e) {
-      console.error('Failed to load project data:', e)
-    }
+    } catch (e) { console.error('Failed to load project data:', e) }
   }
 
   const handleNewProject = async () => {
     const name = prompt('Project name:')
     if (!name) return
-
     try {
-      const res = await fetch('/emergent-clone/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description: 'Created with AI',
-        }),
-      })
+      const res = await fetch('/emergent-clone/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description: 'Created with AI' }) })
       const project = await res.json()
       setProjects([...projects, project])
       setActiveProjectId(project.id)
       addTerminalMessage(`Created project: ${project.name}`)
-    } catch (e) {
-      console.error('Failed to create project:', e)
-    }
+    } catch (e) { console.error('Failed to create project:', e) }
   }
 
   const handleDeleteProject = async (id: string) => {
     try {
       await fetch(`/emergent-clone/api/projects/${id}`, { method: 'DELETE' })
       setProjects(projects.filter((p) => p.id !== id))
-      if (activeProjectId === id) {
-        setActiveProjectId(undefined)
-        setTasks([])
-        setBuilds([])
-      }
+      if (activeProjectId === id) { setActiveProjectId(undefined); setTasks([]); setBuilds([]) }
       addTerminalMessage(`Deleted project: ${id}`)
-    } catch (e) {
-      console.error('Failed to delete project:', e)
-    }
+    } catch (e) { console.error('Failed to delete project:', e) }
   }
 
   const handleSelectProject = async (id: string) => {
@@ -93,116 +71,51 @@ export default function EmergentClonePage() {
 
   const handleRunBuild = async () => {
     if (!activeProjectId) return
-
     setIsBuilding(true)
     addTerminalMessage('Starting build...')
-
     try {
-      const res = await fetch('/emergent-clone/api/builds', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          project_id: activeProjectId,
-          task_id: 'manual',
-          prompt: 'Build the current project',
-        }),
-      })
+      const res = await fetch('/emergent-clone/api/builds', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: activeProjectId, task_id: 'manual', prompt: 'Build the current project' }) })
       const result = await res.json()
       setBuilds([...builds, result])
       addTerminalMessage(result.success ? 'Build completed!' : `Build failed: ${result.error}`)
-    } catch (e) {
-      addTerminalMessage(`Build error: ${e}`)
-    } finally {
-      setIsBuilding(false)
-    }
+    } catch (e) { addTerminalMessage(`Build error: ${e}`) }
+    finally { setIsBuilding(false) }
   }
 
   const handleSendMessage = async (content: string) => {
     setIsSending(true)
-
-    const userMsg: Message = {
-      id: 'user-' + Date.now(),
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString(),
-    }
+    const userMsg: Message = { id: 'user-' + Date.now(), role: 'user', content, timestamp: new Date().toISOString() }
     setChatMessages([...chatMessages, userMsg])
     addTerminalMessage(`User: ${content}`)
-
     try {
-      const response = await generateChatCompletion([
-        { role: 'user', content },
-      ])
-
-      const aiMsg: Message = {
-        id: 'ai-' + Date.now(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date().toISOString(),
-      }
+      const response = await generateChatCompletion([{ role: 'user', content }])
+      const aiMsg: Message = { id: 'ai-' + Date.now(), role: 'assistant', content: response, timestamp: new Date().toISOString() }
       setChatMessages((prev) => [...prev, aiMsg])
       addTerminalMessage(`AI: ${response.slice(0, 50)}...`)
-
-      // Auto-create project if none exists
-      if (!activeProjectId && projects.length === 0) {
-        handleNewProject()
-      }
+      if (!activeProjectId && projects.length === 0) handleNewProject()
     } catch (e) {
-      const errMsg: Message = {
-        id: 'error-' + Date.now(),
-        role: 'system',
-        content: `Error: ${e}`,
-        timestamp: new Date().toISOString(),
-      }
+      const errMsg: Message = { id: 'error-' + Date.now(), role: 'system', content: `Error: ${e}`, timestamp: new Date().toISOString() }
       setChatMessages((prev) => [...prev, errMsg])
-    } finally {
-      setIsSending(false)
-    }
+    } finally { setIsSending(false) }
   }
 
-  const addTerminalMessage = (msg: string) => {
-    setTerminalOutput((prev) => [...prev, msg])
-  }
-
+  const addTerminalMessage = (msg: string) => setTerminalOutput((prev) => [...prev, msg])
   const activeProject = projects.find((p) => p.id === activeProjectId) || null
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onNewProject={handleNewProject}
-      />
-
-      {activeTab === 'projects' && (
-        <div className="flex-1 flex">
-          <div className="w-80 border-r border-border overflow-auto">
-            <ProjectList
-              projects={projects}
-              activeProject={activeProjectId}
-              onSelectProject={handleSelectProject}
-              onDeleteProject={handleDeleteProject}
-            />
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <div className="flex h-[calc(100vh-3.5rem)]">
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onNewProject={handleNewProject} />
+        {activeTab === 'projects' && (
+          <div className="flex-1 flex">
+            <div className="w-80 border-r border-border overflow-auto"><ProjectList projects={projects} activeProject={activeProjectId} onSelectProject={handleSelectProject} onDeleteProject={handleDeleteProject} /></div>
+            <Workspace project={activeProject} tasks={tasks} builds={builds} onRunBuild={handleRunBuild} isBuilding={isBuilding} />
           </div>
-          <Workspace
-            project={activeProject}
-            tasks={tasks}
-            builds={builds}
-            onRunBuild={handleRunBuild}
-            isBuilding={isBuilding}
-          />
-        </div>
-      )}
-
-      {activeTab === 'chat' && (
-        <ChatPanel
-          messages={chatMessages}
-          onSendMessage={handleSendMessage}
-          isSending={isSending}
-        />
-      )}
-
-      {activeTab === 'terminal' && <TerminalPanel output={terminalOutput} />}
+        )}
+        {activeTab === 'chat' && <ChatPanel messages={chatMessages} onSendMessage={handleSendMessage} isSending={isSending} />}
+        {activeTab === 'terminal' && <TerminalPanel output={terminalOutput} />}
+      </div>
     </div>
   )
 }

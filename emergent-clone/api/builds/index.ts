@@ -11,33 +11,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     return res.status(400).json({ error: 'projectId required' })
   }
-
   if (req.method === 'POST') {
     const { project_id, task_id, prompt, files } = req.body
-
-    // Create build record
-    const build = await db.builds.create({
-      project_id,
-      task_id,
-      status: 'building',
-    })
-
-    // Execute build asynchronously
+    const build = await db.builds.create({ project_id, task_id, status: 'building' })
     const result = await executeBuild(prompt, files || {})
-
-    // Update build record
-    await db.builds.update(build.id, {
-      status: result.success ? 'success' : 'failed',
-      output: result.output,
-      error: result.error,
-    })
-
-    return res.status(201).json({
-      ...build,
-      ...result,
-      status: result.success ? 'success' : 'failed',
-    })
+    await db.builds.update(build.id, { status: result.success ? 'success' : 'failed', output: result.output, error: result.error })
+    return res.status(201).json({ ...build, ...result, status: result.success ? 'success' : 'failed' })
   }
-
   return res.status(405).json({ error: 'Method not allowed' })
 }
