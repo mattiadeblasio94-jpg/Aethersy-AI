@@ -27,7 +27,17 @@ export type ProviderSlug =
   | "facebook"
   | "instagram"
   | "twitter"
-  | "youtube";
+  | "youtube"
+  | "basecamp"
+  | "brevo"
+  | "calendly"
+  | "google-ads"
+  | "google-maps"
+  | "hugging-face"
+  | "linkedin"
+  | "outlook"
+  | "pinecone"
+  | "splitwise";
 
 export interface IntegrationContext {
   connectionId: string;
