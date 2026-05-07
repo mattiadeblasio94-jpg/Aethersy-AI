@@ -14,11 +14,26 @@ interface TaskMessage {
   content: string;
 }
 
+interface IntegrationProvider {
+  id: string;
+  name: string;
+  category: string;
+}
+
+interface IntegrationConnection {
+  id: string;
+  display_name: string;
+  integration_providers?: { name: string };
+}
+
 export default function WorkspacePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [messages, setMessages] = useState<TaskMessage[]>([]);
   const [input, setInput] = useState("");
+  const [activeTab, setActiveTab] = useState<"chat" | "integrations">("chat");
+  const [integrations, setIntegrations] = useState<IntegrationProvider[]>([]);
+  const [connections, setConnections] = useState<IntegrationConnection[]>([]);
 
   useEffect(() => {
     fetch("/api/emergent-clone/projects?ownerId=user")
@@ -32,6 +47,19 @@ export default function WorkspacePage() {
       .then(r => r.json())
       .then(setMessages);
   }, [selectedProject]);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+    fetch(`/api/emergent-clone/integrations/connections?projectId=${selectedProject.id}`)
+      .then(r => r.json())
+      .then(setConnections);
+  }, [selectedProject]);
+
+  useEffect(() => {
+    fetch("/api/emergent-clone/integrations/providers")
+      .then(r => r.json())
+      .then(setIntegrations);
+  }, []);
 
   const sendMessage = async () => {
     if (!selectedProject || !input.trim()) return;
@@ -82,15 +110,34 @@ export default function WorkspacePage() {
 
       <section className="flex-1 flex flex-col">
         <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="font-semibold">
-              {selectedProject ? selectedProject.name : "Seleziona un progetto"}
-            </h1>
-            <p className="text-xs text-slate-500">
-              Conversazione per definire l'app.
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="font-semibold">
+                {selectedProject ? selectedProject.name : "Seleziona un progetto"}
+              </h1>
+              <p className="text-xs text-slate-500">
+                Conversazione e integrazioni per questo progetto.
+              </p>
+            </div>
+            {selectedProject && (
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => setActiveTab("chat")}
+                  className={activeTab === "chat" ? "text-accent" : "text-slate-500"}
+                >
+                  Chat
+                </button>
+                <span className="text-slate-700">•</span>
+                <button
+                  onClick={() => setActiveTab("integrations")}
+                  className={activeTab === "integrations" ? "text-accent" : "text-slate-500"}
+                >
+                  Integrations
+                </button>
+              </div>
+            )}
           </div>
-          {selectedProject && (
+          {selectedProject && activeTab === "chat" && (
             <button
               onClick={triggerBuild}
               className="px-3 py-1.5 rounded-md bg-accent text-slate-900 text-sm font-medium"
@@ -101,31 +148,80 @@ export default function WorkspacePage() {
         </header>
 
         <div className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map(m => (
-              <div key={m.id} className="text-sm">
-                <span className="font-semibold mr-2 text-slate-400">
-                  {m.role === "user" ? "Tu" : m.role === "assistant" ? "AI" : "System"}:
-                </span>
-                <span>{m.content}</span>
+          {activeTab === "chat" && (
+            <>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {messages.map(m => (
+                  <div key={m.id} className="text-sm">
+                    <span className="font-semibold mr-2 text-slate-400">
+                      {m.role === "user" ? "Tu" : m.role === "assistant" ? "AI" : "System"}:
+                    </span>
+                    <span>{m.content}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {selectedProject && (
-            <div className="border-t border-slate-800 p-3 flex gap-2">
-              <input
-                className="flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none"
-                placeholder="Descrivi l'app che vuoi costruire..."
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && sendMessage()}
-              />
-              <button
-                onClick={sendMessage}
-                className="px-3 py-2 rounded-md bg-accent text-slate-900 text-sm font-medium"
-              >
-                Invia
-              </button>
+              {selectedProject && (
+                <div className="border-t border-slate-800 p-3 flex gap-2">
+                  <input
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none"
+                    placeholder="Descrivi l'app che vuoi costruire..."
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && sendMessage()}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    className="px-3 py-2 rounded-md bg-accent text-slate-900 text-sm font-medium"
+                  >
+                    Invia
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === "integrations" && selectedProject && (
+            <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold">Connected</h2>
+                <div className="space-y-2">
+                  {connections.map(c => (
+                    <div key={c.id} className="border border-slate-800 rounded-md p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{c.display_name}</span>
+                        <span className="text-slate-500">
+                          {c.integration_providers?.name ?? "Provider"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {connections.length === 0 && (
+                    <p className="text-xs text-slate-500">
+                      Nessuna integrazione collegata a questo progetto.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold">Available providers</h2>
+                <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                  {integrations.map(p => (
+                    <button
+                      key={p.id}
+                      className="w-full text-left border border-slate-800 rounded-md p-3 text-xs hover:border-accent/60"
+                      onClick={() => {
+                        alert(`Configura provider: ${p.name}`);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{p.name}</span>
+                        <span className="text-slate-500">{p.category}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
