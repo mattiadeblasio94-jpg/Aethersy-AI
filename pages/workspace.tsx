@@ -24,7 +24,7 @@ interface IntegrationConnection {
   id: string;
   display_name: string;
   provider_slug?: string;
-  integration_providers?: { name: string };
+  integration_providers?: { name: string }[];
   metadata?: { default_database_id?: string };
 }
 
@@ -192,7 +192,7 @@ export default function WorkspacePage() {
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{c.display_name}</span>
                         <span className="text-slate-500">
-                          {c.integration_providers?.name ?? c.provider_slug}
+                          {c.integration_providers?.[0]?.name ?? c.provider_slug}
                         </span>
                       </div>
 
