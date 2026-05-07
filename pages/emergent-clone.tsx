@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Header } from './emergent-clone-components/layout/Header'
-import { Sidebar } from './emergent-clone-components/sidebar/Sidebar'
-import { ProjectList } from './emergent-clone-components/project-list/ProjectList'
-import { Workspace } from './emergent-clone-components/workspace/Workspace'
-import { ChatPanel } from './emergent-clone-components/chat/ChatPanel'
-import { TerminalPanel } from './emergent-clone-components/terminal/TerminalPanel'
-import { Project, Task, Build, Message } from './emergent-clone-lib/types'
-import { generateChatCompletion } from './emergent-clone-lib/llm'
+import { Header } from '../components/emergent-clone/layout/Header'
+import { Sidebar } from '../components/emergent-clone/sidebar/Sidebar'
+import { ProjectList } from '../components/emergent-clone/project-list/ProjectList'
+import { Workspace } from '../components/emergent-clone/workspace/Workspace'
+import { ChatPanel } from '../components/emergent-clone/chat/ChatPanel'
+import { TerminalPanel } from '../components/emergent-clone/terminal/TerminalPanel'
+import { Project, Task, Build, Message } from '../lib/emergent-clone/types'
+import { generateChatCompletion } from '../lib/emergent-clone/llm'
 
 export default function EmergentClonePage() {
   const [activeTab, setActiveTab] = useState('projects')

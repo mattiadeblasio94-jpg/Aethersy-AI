@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { db } from '../../../emergent-clone-lib/db'
-import { executeBuild } from '../../../emergent-clone-lib/builder'
+import { db } from '../../lib/emergent-clone/db'
+import { executeBuild } from '../../lib/emergent-clone/builder'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
