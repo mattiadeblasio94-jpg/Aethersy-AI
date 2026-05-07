@@ -16,6 +16,19 @@ import { MessagesDB, MemoryDB, TasksDB, LogsDB, UsersDB, supabase } from './supa
 
 // Funzione per ottenere config AI (lette a runtime, non a build time)
 function getAIConfig() {
+  const groqKey = process.env.GROQ_API_KEY || ''
+  const alibabaKey = process.env.ALIBABA_API_KEY || ''
+  const alibabaHost = process.env.ALIBABA_HOST_URL || ''
+  const alibabaModel = process.env.ALIBABA_MODEL || ''
+
+  // Debug log per Vercel
+  if (typeof console !== 'undefined') {
+    console.log('[LARA-CORE] GROQ_API_KEY length:', groqKey.length)
+    console.log('[LARA-CORE] ALIBABA_API_KEY length:', alibabaKey.length)
+    console.log('[LARA-CORE] ALIBABA_HOST_URL:', alibabaHost)
+    console.log('[LARA-CORE] ALIBABA_MODEL:', alibabaModel)
+  }
+
   return {
     ollama: {
       baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
@@ -27,16 +40,16 @@ function getAIConfig() {
       }
     },
     groq: {
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey: groqKey,
       models: {
         chat: 'llama-3.1-8b-instant',
         fast: 'mixtral-8x7b-32768'
       }
     },
     alibaba: {
-      apiKey: process.env.ALIBABA_CLOUD_API_KEY,
-      baseUrl: process.env.ALIBABA_CLOUD_BASE_URL || 'https://dashscope.aliyuncs.com/api/v1',
-      model: process.env.ALIBABA_CLOUD_MODEL || 'qwen-plus'
+      apiKey: alibabaKey,
+      baseUrl: alibabaHost || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      model: alibabaModel || 'qwen-plus'
     },
     huggingface: {
       apiKey: process.env.HUGGINGFACE_API_KEY,
