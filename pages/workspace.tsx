@@ -23,7 +23,9 @@ interface IntegrationProvider {
 interface IntegrationConnection {
   id: string;
   display_name: string;
+  provider_slug?: string;
   integration_providers?: { name: string };
+  metadata?: { default_database_id?: string };
 }
 
 export default function WorkspacePage() {
@@ -186,13 +188,37 @@ export default function WorkspacePage() {
                 <h2 className="text-sm font-semibold">Connected</h2>
                 <div className="space-y-2">
                   {connections.map(c => (
-                    <div key={c.id} className="border border-slate-800 rounded-md p-3 text-xs">
+                    <div key={c.id} className="border border-slate-800 rounded-md p-3 text-xs space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{c.display_name}</span>
                         <span className="text-slate-500">
-                          {c.integration_providers?.name ?? "Provider"}
+                          {c.integration_providers?.name ?? c.provider_slug}
                         </span>
                       </div>
+
+                      {c.provider_slug === "notion" && (
+                        <div className="space-y-1">
+                          <label className="block text-[10px] uppercase text-slate-500">
+                            Default database ID
+                          </label>
+                          <input
+                            className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
+                            defaultValue={c.metadata?.default_database_id ?? ""}
+                            onBlur={async e => {
+                              const value = e.target.value.trim();
+                              await fetch("/api/emergent-clone/integrations/connections/update-metadata", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  connectionId: c.id,
+                                  metadata: { ...c.metadata, default_database_id: value }
+                                })
+                              });
+                            }}
+                            placeholder="es. 1234abcd-..."
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                   {connections.length === 0 && (
