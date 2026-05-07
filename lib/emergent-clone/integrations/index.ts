@@ -4,6 +4,7 @@ import { WhatsAppIntegration } from "./whatsapp";
 import { GithubIntegration } from "./github";
 import { GoogleIntegration } from "./google";
 import { AirtableIntegration } from "./airtable";
+import { SlackIntegration } from "./slack";
 
 export function registerAllIntegrations() {
   registerIntegration(TelegramIntegration);
@@ -11,6 +12,7 @@ export function registerAllIntegrations() {
   registerIntegration(GithubIntegration);
   registerIntegration(GoogleIntegration);
   registerIntegration(AirtableIntegration);
+  registerIntegration(SlackIntegration);
 }
 
 export { getIntegration, getConnectionById } from "./core";
