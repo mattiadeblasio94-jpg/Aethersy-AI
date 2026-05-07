@@ -4,6 +4,7 @@ import { generateAppSpec } from "../../../lib/emergent-clone/llm";
 import { materializeApp } from "../../../lib/emergent-clone/builder";
 import { initAndPushRepo } from "../../../lib/emergent-clone/git";
 import { triggerVercelDeploy, triggerFlyDeploy } from "../../../lib/emergent-clone/deploy";
+import { getIntegration, getConnectionById } from "../../../lib/emergent-clone/integrations/core";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
@@ -89,6 +90,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           artifact_url: repoUrl
         })
         .eq("id", buildRow.id);
+
+      // Notify Slack connections about successful build
+      const { data: slackConnections } = await supabaseAdmin
+        .from("integration_connections")
+        .select("*")
+        .eq("project_id", projectId)
+        .eq("provider_slug", "slack");
+
+      if (slackConnections && slackConnections.length > 0) {
+        for (const conn of slackConnections) {
+          try {
+            const handler = getIntegration("slack");
+            if (handler?.send) {
+              const ctx = await getConnectionById(conn.id);
+              if (ctx) {
+                await handler.send(ctx, {
+                  action: "send_message",
+                  channel: conn.metadata?.default_channel,
+                  text: `Build completata per ${project.name}`
+                });
+              }
+            }
+          } catch (e) {
+            console.error("Failed to notify Slack:", e);
+          }
+        }
+      }
 
       return res.status(200).json({
         buildId: buildRow.id,
