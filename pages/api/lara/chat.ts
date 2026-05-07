@@ -40,8 +40,12 @@ Parli come una partner di business in gamba. Usi "noi" quando parli di progetti.
 Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), struttura CONTESTO → INSIGHT → AZIONE → NEXT STEP.`
 
     // Chiama Vercel AI Gateway (con fallback a Groq diretto)
-    const gatewayKey = process.env.VERCEL_AI_GATEWAY_KEY
-    const groqKey = process.env.GROQ_API_KEY
+    const gatewayKey = process.env.VERCEL_AI_GATEWAY_KEY || ''
+    const groqKey = process.env.GROQ_API_KEY || ''
+
+    // Debug log
+    console.log('[LARA-CHAT] GROQ_API_KEY length:', groqKey.length)
+    console.log('[LARA-CHAT] VERCEL_AI_GATEWAY_KEY length:', gatewayKey.length)
 
     if (gatewayKey) {
       // Usa Vercel AI Gateway
@@ -79,7 +83,8 @@ Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), s
     }
 
     // Fallback: Chiama Groq direttamente
-    if (groqKey) {
+    console.log('[LARA-CHAT] Attempting direct Groq call, key length:', groqKey.length)
+    if (groqKey && groqKey.length > 10) {
       try {
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -98,6 +103,7 @@ Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), s
           })
         })
 
+        console.log('[LARA-CHAT] Groq response status:', groqRes.status)
         if (groqRes.ok) {
           const groqData = await groqRes.json()
           return res.json({
@@ -106,10 +112,16 @@ Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), s
             success: true,
             platform
           })
+        } else {
+          const errText = await groqRes.text()
+          console.log('[LARA-CHAT] Groq error body:', errText)
+          return res.status(groqRes.status).json({ error: 'Groq API error: ' + errText })
         }
       } catch (groqErr: any) {
-        console.log('Groq error:', groqErr.message)
+        console.log('[LARA-CHAT] Groq exception:', groqErr.message)
       }
+    } else {
+      console.log('[LARA-CHAT] Groq key not valid, length:', groqKey.length)
     }
 
     // Fallback a ciclo Lara completo
