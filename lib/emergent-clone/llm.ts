@@ -38,3 +38,36 @@ export async function planTask(prompt: string): Promise<{ steps: string[]; estim
     return { steps: [response], estimate: '5 min' }
   }
 }
+
+type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+
+const SYSTEM_PROMPT = `
+Sei un AI App Architect.
+Dato il dialogo con l'utente, produci una SPECIFICA STRUTTURATA dell'app da costruire in JSON.
+Non generare codice, solo struttura: pages, components, api, db_models, integrations.
+`;
+
+export async function generateAppSpec(messages: ChatMessage[]): Promise<any> {
+  const payload = {
+    model: process.env.LLM_MODEL_ID ?? 'gpt-4.1-mini',
+    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+    response_format: { type: 'json_object' }
+  };
+
+  const res = await fetch(process.env.LLM_API_URL!, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.LLM_API_KEY}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`LLM error: ${text}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.parsed ?? data.choices?.[0]?.message?.content;
+}
