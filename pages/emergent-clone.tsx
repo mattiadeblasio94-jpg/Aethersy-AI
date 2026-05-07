@@ -25,7 +25,7 @@ export default function EmergentClonePage() {
 
   const loadProjects = async () => {
     try {
-      const res = await fetch('/api/emergent-clone/projects')
+      const res = await fetch('/api/emergent-clone/projects?ownerId=user')
       const data = await res.json()
       setProjects(data)
     } catch (e) { console.error('Failed to load projects:', e) }
