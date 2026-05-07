@@ -11,8 +11,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select("*, integration_providers(*)")
       .eq("project_id", projectId as string);
 
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json(data);
+    if (error) {
+      console.error("Connections fetch error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Ensure data is an array
+    const connections = Array.isArray(data) ? data : [];
+    return res.status(200).json(connections);
   }
 
   if (req.method === "POST") {

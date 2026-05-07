@@ -11,6 +11,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .select("*")
     .order("name", { ascending: true });
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(200).json(data);
+  if (error) {
+    console.error("Providers fetch error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  // Ensure data is an array
+  const providers = Array.isArray(data) ? data : [];
+  res.status(200).json(providers);
 }

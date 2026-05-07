@@ -29,13 +29,15 @@ export default function BuilderPage() {
     if (!activeProjectId) return
     fetch(`/api/emergent-clone/integrations/connections?projectId=${activeProjectId}`)
       .then(r => r.json())
-      .then(setConnections)
+      .then(data => setConnections(Array.isArray(data) ? data : []))
+      .catch(() => setConnections([]))
   }, [activeProjectId])
 
   useEffect(() => {
     fetch('/api/emergent-clone/integrations/providers')
       .then(r => r.json())
-      .then(setProviders)
+      .then(data => setProviders(Array.isArray(data) ? data : []))
+      .catch(() => setProviders([]))
   }, [])
 
   const loadProjects = async () => {
