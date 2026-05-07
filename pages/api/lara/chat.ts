@@ -1,12 +1,9 @@
 /**
- * LARA CHAT API — Think-Plan-Act-Verify Cycle
- * Updated to use lara-core.ts
+ * LARA CHAT API — Direct Groq/Alibaba call
  */
-
-import { runLaraCycle } from '../../../lib/lara-core'
+import axios from 'axios'
 import { v4 as uuidv4 } from 'uuid'
 
-// Force Node.js runtime for proper env var access
 export const config = {
   runtime: 'nodejs'
 }
@@ -39,60 +36,21 @@ Sei CONCRETA: dai sempre un next action eseguibile.
 Parli come una partner di business in gamba. Usi "noi" quando parli di progetti.
 Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), struttura CONTESTO → INSIGHT → AZIONE → NEXT STEP.`
 
-    // Chiama Vercel AI Gateway (con fallback a Groq diretto)
-    const gatewayKey = process.env.VERCEL_AI_GATEWAY_KEY || ''
-    const groqKey = process.env.GROQ_API_KEY || ''
+    // Read env vars
+    const groqKey = process.env.GROQ_API_KEY
+    const alibabaKey = process.env.ALIBABA_API_KEY
+    const alibabaHost = process.env.ALIBABA_HOST_URL
+    const alibabaModel = process.env.ALIBABA_MODEL
 
-    // Debug log
-    console.log('[LARA-CHAT] GROQ_API_KEY length:', groqKey.length)
-    console.log('[LARA-CHAT] VERCEL_AI_GATEWAY_KEY length:', gatewayKey.length)
+    console.log('[LARA] GROQ_API_KEY:', groqKey ? groqKey.length + ' chars' : 'MISSING')
+    console.log('[LARA] ALIBABA_API_KEY:', alibabaKey ? alibabaKey.length + ' chars' : 'MISSING')
 
-    if (gatewayKey) {
-      // Usa Vercel AI Gateway
-      try {
-        const gatewayRes = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${gatewayKey}`
-          },
-          body: JSON.stringify({
-            model: 'groq/llama-3.1-8b-instant',
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: message }
-            ],
-            max_tokens: 1000,
-            temperature: 0.7
-          })
-        })
-
-        if (gatewayRes.ok) {
-          const gatewayData = await gatewayRes.json()
-          return res.json({
-            response: gatewayData.choices[0].message.content,
-            session_id: sessionId,
-            success: true,
-            platform
-          })
-        }
-      } catch (gwErr: any) {
-        console.log('Gateway error:', gwErr.message)
-        // Fallback a Groq diretto
-      }
-    }
-
-    // Fallback: Chiama Groq direttamente
-    console.log('[LARA-CHAT] Attempting direct Groq call, key length:', groqKey.length)
+    // Try Groq first
     if (groqKey && groqKey.length > 10) {
       try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
-          },
-          body: JSON.stringify({
+        const groqRes = await axios.post(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
             model: 'llama-3.1-8b-instant',
             messages: [
               { role: 'system', content: SYSTEM_PROMPT },
@@ -100,54 +58,81 @@ Formato: **grassetto** per concetti chiave, emoji moderate (🎯📈💡🚀), s
             ],
             max_tokens: 1000,
             temperature: 0.7
-          })
-        })
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + groqKey
+            },
+            timeout: 30000
+          }
+        )
 
-        console.log('[LARA-CHAT] Groq response status:', groqRes.status)
-        if (groqRes.ok) {
-          const groqData = await groqRes.json()
-          return res.json({
-            response: groqData.choices[0].message.content,
-            session_id: sessionId,
-            success: true,
-            platform
-          })
-        } else {
-          const errText = await groqRes.text()
-          console.log('[LARA-CHAT] Groq error body:', errText)
-          return res.status(groqRes.status).json({ error: 'Groq API error: ' + errText })
-        }
+        return res.json({
+          response: groqRes.data.choices[0].message.content,
+          session_id: sessionId,
+          success: true,
+          platform,
+          provider: 'groq'
+        })
       } catch (groqErr: any) {
-        console.log('[LARA-CHAT] Groq exception:', groqErr.message)
+        console.log('[LARA] Groq error:', groqErr.message)
+        if (groqErr.response) {
+          return res.status(groqErr.response.status).json({
+            error: 'Groq: ' + (groqErr.response.data?.error?.message || 'API error')
+          })
+        }
       }
-    } else {
-      console.log('[LARA-CHAT] Groq key not valid, length:', groqKey.length)
     }
 
-    // Fallback a ciclo Lara completo
-    const result = await runLaraCycle({
-      userId,
-      sessionId,
-      userMessage: message,
-      chatId,
-      platform
-    })
+    // Try Alibaba
+    if (alibabaKey && alibabaHost) {
+      try {
+        const alibabaRes = await axios.post(
+          alibabaHost + '/chat/completions',
+          {
+            model: alibabaModel || 'qwen-plus',
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: message }
+            ],
+            max_tokens: 1000,
+            temperature: 0.7
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + alibabaKey
+            },
+            timeout: 30000
+          }
+        )
 
-    return res.json({
-      response: result.response,
-      session_id: sessionId,
-      steps_executed: result.execution.steps_completed,
-      total_steps: result.execution.total_steps,
-      success: result.execution.success,
-      next_actions: result.nextActions,
-      duration_ms: result.execution.duration_ms
+        return res.json({
+          response: alibabaRes.data.choices?.[0]?.message?.content,
+          session_id: sessionId,
+          success: true,
+          platform,
+          provider: 'alibaba'
+        })
+      } catch (albErr: any) {
+        console.log('[LARA] Alibaba error:', albErr.message)
+      }
+    }
+
+    // No provider
+    return res.status(503).json({
+      error: 'Nessun provider AI disponibile',
+      debug: {
+        groq: groqKey ? 'configured' : 'MISSING',
+        alibaba: alibabaKey ? 'configured' : 'MISSING'
+      }
     })
 
   } catch (error: any) {
     console.error('Lara Chat API error:', error)
     return res.status(500).json({
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: error.message
     })
   }
 }
