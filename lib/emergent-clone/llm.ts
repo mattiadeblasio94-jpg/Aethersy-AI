@@ -39,26 +39,80 @@ export async function planTask(prompt: string): Promise<{ steps: string[]; estim
   }
 }
 
-type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 const SYSTEM_PROMPT = `
-Sei un AI App Architect.
-Dato il dialogo con l'utente, produci una SPECIFICA STRUTTURATA dell'app da costruire in JSON.
-Non generare codice, solo struttura: pages, components, api, db_models, integrations.
+Sei "Architect‑AI", un senior software architect.
+
+Dato il dialogo con l'utente, produci una SPECIFICA COMPLETA dell'app in JSON con questo schema:
+
+{
+  "name": "string",
+  "description": "string",
+  "stack": {
+    "frontend": "nextjs",
+    "backend": "next-api",
+    "db": "postgres",
+    "auth": "supabase"
+  },
+  "pages": [
+    {
+      "path": "string (es. '/')",
+      "title": "string",
+      "route_type": "public | protected",
+      "components": [
+        {
+          "name": "string",
+          "type": "layout | form | table | chart | widget",
+          "props": { "any": "any" }
+        }
+      ]
+    }
+  ],
+  "api_routes": [
+    {
+      "method": "GET | POST | PUT | DELETE",
+      "path": "/api/...",
+      "handler_name": "string",
+      "description": "string",
+      "input_schema": { "zod": "string" },
+      "output_schema": { "zod": "string" }
+    }
+  ],
+  "db_models": [
+    {
+      "name": "string",
+      "table": "string",
+      "fields": [
+        { "name": "string", "type": "string", "nullable": "boolean", "primary": "boolean" }
+      ]
+    }
+  ],
+  "ui_style": {
+    "theme": "dark",
+    "accent_color": "string",
+    "layout": "dashboard | landing | multi-step"
+  }
+}
+
+Rispetta rigorosamente questo schema. Nessun testo fuori dal JSON.
 `;
 
 export async function generateAppSpec(messages: ChatMessage[]): Promise<any> {
   const payload = {
-    model: process.env.LLM_MODEL_ID ?? 'gpt-4.1-mini',
-    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
-    response_format: { type: 'json_object' }
+    model: process.env.LLM_MODEL_ID ?? "gpt-4.1-mini",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages
+    ],
+    response_format: { type: "json_object" }
   };
 
   const res = await fetch(process.env.LLM_API_URL!, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.LLM_API_KEY}`
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.LLM_API_KEY}`
     },
     body: JSON.stringify(payload)
   });
@@ -69,5 +123,5 @@ export async function generateAppSpec(messages: ChatMessage[]): Promise<any> {
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.parsed ?? data.choices?.[0]?.message?.content;
+  return data.choices?.[0]?.message?.parsed ?? JSON.parse(data.choices?.[0]?.message?.content);
 }
