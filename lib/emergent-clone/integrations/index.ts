@@ -5,8 +5,14 @@ import { GithubIntegration } from "./github";
 import { GoogleIntegration } from "./google";
 import { AirtableIntegration } from "./airtable";
 import { SlackIntegration } from "./slack";
+// TODO: importare qui anche: Discord, Notion, Asana, Trello, ClickUp, ecc.
 
-export function registerAllIntegrations() {
+let initialized = false;
+
+export function initIntegrations() {
+  if (initialized) return;
+  initialized = true;
+
   registerIntegration(TelegramIntegration);
   registerIntegration(WhatsAppIntegration);
   registerIntegration(GithubIntegration);
