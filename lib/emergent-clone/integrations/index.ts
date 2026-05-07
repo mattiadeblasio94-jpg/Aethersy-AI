@@ -3,12 +3,14 @@ import { TelegramIntegration } from "./telegram";
 import { WhatsAppIntegration } from "./whatsapp";
 import { GithubIntegration } from "./github";
 import { GoogleIntegration } from "./google";
+import { AirtableIntegration } from "./airtable";
 
 export function registerAllIntegrations() {
   registerIntegration(TelegramIntegration);
   registerIntegration(WhatsAppIntegration);
   registerIntegration(GithubIntegration);
   registerIntegration(GoogleIntegration);
+  registerIntegration(AirtableIntegration);
 }
 
 export { getIntegration, getConnectionById } from "./core";
