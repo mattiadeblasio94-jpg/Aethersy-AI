@@ -4,7 +4,8 @@
  */
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
-const GROQ_API_KEY = process.env.GROQ_API_KEY
+const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.GROQ_API_KEY_WORM_GPT
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 
 const LARA_SYSTEM_PROMPT = `Sei Lara, AI Agent senior di Aethersy OS.
 Sei disponibile, simpatica e intelligente — mai un bot freddo.
@@ -65,31 +66,68 @@ function sendTyping(chatId) {
   }).catch(() => {})
 }
 
-// AI call to Groq only
+// AI call: OpenRouter (Hugging Face models) con fallback Groq
 async function askAI(message) {
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: LARA_SYSTEM_PROMPT },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
+  // Tentativo 1: OpenRouter (Qwen 2.5 72B, Llama 3.1 70B, Mixtral 8x22B, DeepSeek V3)
+  if (OPENROUTER_API_KEY) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://aethersy.com',
+          'X-Title': 'Lara Telegram Bot'
+        },
+        body: JSON.stringify({
+          model: 'qwen/qwen-2.5-72b-instruct',
+          messages: [
+            { role: 'system', content: LARA_SYSTEM_PROMPT },
+            { role: 'user', content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
       })
-    })
-    if (res.ok) {
-      const data = await res.json()
-      return data.choices[0].message.content
+      if (res.ok) {
+        const data = await res.json()
+        const content = data.choices?.[0]?.message?.content
+        if (content) {
+          console.log('[OpenRouter] success')
+          return content
+        }
+      }
+    } catch (e) {
+      console.log('OpenRouter fail:', e.message)
     }
-  } catch (e) {
-    console.log('Groq fail:', e.message)
+  }
+
+  // Tentativo 2: Groq fallback
+  if (GROQ_API_KEY) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: LARA_SYSTEM_PROMPT },
+            { role: 'user', content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return data.choices[0].message.content
+      }
+    } catch (e) {
+      console.log('Groq fail:', e.message)
+    }
   }
 
   return "❌ Scusa, ho problemi di connessione. Riprova!"
