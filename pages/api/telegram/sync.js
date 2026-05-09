@@ -6,9 +6,16 @@
 
 import { kv } from '@vercel/kv';
 
-export const config = { api: { bodyParser: true } };
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+}
 
 export default async function handler(req, res) {
+  // Bypass Vercel bot protection for Telegram sync
+  res.setHeader('x-vercel-protection-bypass', 'telegram-sync-bypass')
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo non consentito' });
   }

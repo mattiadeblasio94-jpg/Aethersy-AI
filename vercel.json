@@ -59,9 +59,9 @@
       ]
     },
     {
-      "source": "/api/telegram",
+      "source": "/api/telegram(.*)",
       "headers": [
-        { "key": "x-vercel-protection-bypass", "value": "telegram-webhook-bypass" },
+        { "key": "x-vercel-protection-bypass", "value": "telegram-bypass" },
         { "key": "x-vercel-protect", "value": "false" }
       ]
     }
