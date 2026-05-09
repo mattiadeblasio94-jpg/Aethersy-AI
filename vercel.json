@@ -1,5 +1,8 @@
 {
   "buildCommand": "next build --no-lint",
+  "github": {
+    "silent": true
+  },
   "redirects": [
     { "source": "/api/telegram.js", "destination": "/api/telegram" },
     { "source": "/api/tools/google.js", "destination": "/api/tools/google" },
@@ -53,6 +56,13 @@
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,POST,PUT,DELETE" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
+      ]
+    },
+    {
+      "source": "/api/telegram",
+      "headers": [
+        { "key": "x-vercel-protection-bypass", "value": "telegram-webhook-bypass" },
+        { "key": "x-vercel-protect", "value": "false" }
       ]
     }
   ]

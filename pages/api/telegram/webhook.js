@@ -170,7 +170,18 @@ const SKILLS_KEYBOARD = {
   ]
 }
 
+export const config = {
+  api: {
+    bodyParser: true,
+    responseLimit: false,
+  },
+}
+
 export default async function handler(req, res) {
+  // Bypass Vercel bot protection for Telegram
+  res.setHeader('x-vercel-protection-bypass', 'telegram-webhook-bypass')
+
+  // Allow GET for webhook verification
   if (req.method === 'GET') {
     res.status(200).send('Lara Bot is running! 🤖')
     return
