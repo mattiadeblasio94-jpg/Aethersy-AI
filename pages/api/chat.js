@@ -1,7 +1,7 @@
 import { saveMessage, getHistory } from '../../lib/memory';
 import { getAllPages } from '../../lib/wiki';
 import { LARA_SYSTEM_PROMPT } from '../../lib/prompts/lara';
-import fetch from 'node-fetch';
+import axios from 'axios';
 
 export const config = { api: { bodyParser: true, responseLimit: false } };
 
@@ -64,28 +64,22 @@ export default async function handler(req, res) {
     try {
       console.log('[Chat API] Calling OpenRouter with model:', model);
 
-      const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
+      const orRes = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model: model,
+        messages: [{ role: 'system', content: SYSTEM }, ...messages],
+        max_tokens: 2048,
+        stream: true
+      }, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://aethersy.com',
           'X-Title': 'Aethersy-AI'
         },
-        body: JSON.stringify({
-          model: model,
-          messages: [{ role: 'system', content: SYSTEM }, ...messages],
-          max_tokens: 2048,
-          stream: true
-        })
+        responseType: 'stream'
       });
 
       console.log('[Chat API] OpenRouter response status:', orRes.status);
-
-      if (!orRes.ok) {
-        const errData = await orRes.json();
-        throw new Error(errData.error?.message || 'OpenRouter error');
-      }
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -93,41 +87,47 @@ export default async function handler(req, res) {
       res.setHeader('X-Accel-Buffering', 'no');
       res.flushHeaders?.();
 
-      const reader = orRes.body.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
       let fullReply = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop();
+      orRes.data.on('data', (chunk) => {
+        const lines = chunk.toString().split('\n');
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
-            const chunk = data.choices?.[0]?.delta?.content || '';
-            if (chunk) {
-              fullReply += chunk;
-              res.write(`data: ${JSON.stringify({ t: chunk, model })}\n\n`);
+          if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              const content = data.choices?.[0]?.delta?.content || '';
+              if (content) {
+                fullReply += content;
+                res.write(`data: ${JSON.stringify({ t: content, model })}\n\n`);
+              }
+            } catch (e) {
+              // Skip invalid JSON
             }
           }
         }
-      }
+      });
 
-      // Save to memory (non-blocking, ignore errors)
-      try {
-        await Promise.all([
-          saveMessage(sid, 'user', message),
-          saveMessage(sid, 'assistant', fullReply),
-        ]);
-      } catch (saveErr) {
-        console.log('[Chat API] saveMessage error (non-blocking):', saveErr.message);
-      }
+      orRes.data.on('end', async () => {
+        // Save to memory (non-blocking, ignore errors)
+        try {
+          await Promise.all([
+            saveMessage(sid, 'user', message),
+            saveMessage(sid, 'assistant', fullReply),
+          ]);
+        } catch (saveErr) {
+          console.log('[Chat API] saveMessage error (non-blocking):', saveErr.message);
+        }
 
-      res.write(`data: ${JSON.stringify({ done: true, model })}\n\n`);
-      res.end();
+        res.write(`data: ${JSON.stringify({ done: true, model })}\n\n`);
+        res.end();
+      });
+
+      orRes.data.on('error', (err) => {
+        console.error('[Chat API] Stream error:', err.message);
+        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.end();
+      });
+
       return;
     } catch (orErr) {
       console.error('[Chat API] OpenRouter error:', orErr.message);
@@ -136,69 +136,71 @@ export default async function handler(req, res) {
 
   // ── GROQ STREAMING (Fallback) ─────────────────────────────────────────────────
   if (streaming && GROQ_API_KEY) {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders?.();
-
     try {
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
+      console.log('[Chat API] Calling Groq (streaming fallback)');
+
+      const groqRes = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'system', content: SYSTEM }, ...messages],
+        max_tokens: 2048,
+        stream: true
+      }, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${GROQ_API_KEY}`
         },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages: [{ role: 'system', content: SYSTEM }, ...messages],
-          max_tokens: 2048,
-          stream: true
-        })
+        responseType: 'stream'
       });
 
-      if (!groqRes.ok) {
-        const errData = await groqRes.json();
-        throw new Error(errData.error?.message || 'Groq error');
-      }
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.flushHeaders?.();
 
-      const reader = groqRes.body.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
       let fullReply = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop();
+      groqRes.data.on('data', (chunk) => {
+        const lines = chunk.toString().split('\n');
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
-            const chunk = data.choices?.[0]?.delta?.content || '';
-            if (chunk) {
-              fullReply += chunk;
-              res.write(`data: ${JSON.stringify({ t: chunk, model: 'llama-3.1-8b-instant' })}\n\n`);
+          if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              const content = data.choices?.[0]?.delta?.content || '';
+              if (content) {
+                fullReply += content;
+                res.write(`data: ${JSON.stringify({ t: content, model: 'llama-3.1-8b-instant' })}\n\n`);
+              }
+            } catch (e) {
+              // Skip invalid JSON
             }
           }
         }
-      }
+      });
 
-      try {
-        await Promise.all([
-          saveMessage(sid, 'user', message),
-          saveMessage(sid, 'assistant', fullReply),
-        ]);
-      } catch {}
+      groqRes.data.on('end', async () => {
+        try {
+          await Promise.all([
+            saveMessage(sid, 'user', message),
+            saveMessage(sid, 'assistant', fullReply),
+          ]);
+        } catch (saveErr) {
+          console.log('[Chat API] saveMessage error (non-blocking):', saveErr.message);
+        }
 
-      res.write(`data: ${JSON.stringify({ done: true, model: 'llama-3.1-8b-instant' })}\n\n`);
-      res.end();
+        res.write(`data: ${JSON.stringify({ done: true, model: 'llama-3.1-8b-instant' })}\n\n`);
+        res.end();
+      });
+
+      groqRes.data.on('error', (err) => {
+        console.error('[Chat API] Groq stream error:', err.message);
+        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.end();
+      });
+
       return;
     } catch (groqErr) {
-      res.write(`data: ${JSON.stringify({ error: groqErr.message })}\n\n`);
-      res.end();
-      return;
+      console.error('[Chat API] Groq error:', groqErr.message);
     }
   }
 
@@ -210,28 +212,20 @@ export default async function handler(req, res) {
   try {
     console.log('[Chat API] Calling Groq (non-streaming fallback)');
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
+    const groqRes = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'system', content: SYSTEM }, ...messages],
+      max_tokens: 2048,
+    }, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'system', content: SYSTEM }, ...messages],
-        max_tokens: 2048,
-      }),
+      }
     });
 
     console.log('[Chat API] Groq response status:', groqRes.status);
 
-    if (!groqRes.ok) {
-      const errData = await groqRes.json();
-      throw new Error(errData.error?.message || 'Groq error');
-    }
-
-    const groqData = await groqRes.json();
-    const reply = groqData.choices?.[0]?.message?.content || '';
+    const reply = groqRes.data.choices?.[0]?.message?.content || '';
 
     // Save to memory (non-blocking, ignore errors)
     try {
