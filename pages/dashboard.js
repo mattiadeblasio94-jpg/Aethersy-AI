@@ -1005,27 +1005,6 @@ function FinCard({ data, type }) {
   );
 }
 
-/* ── SECOND BRAIN (redirect) ─────────────────────────────────────────────────── */
-function WikiRedirectPanel() {
-  return (
-    <div style={{ ...css.panel, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, textAlign: 'center', gap: 20 }}>
-      <div style={{ fontSize: 64 }}>🧠</div>
-      <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Second Brain</h2>
-      <p style={{ color: '#94a3b8', maxWidth: 480, lineHeight: 1.6, margin: 0 }}>
-        Ingesta fonti, interroga la wiki con linguaggio naturale, e lascia che l&apos;AI mantenga il tuo archivio di conoscenza strutturato.
-      </p>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', margin: '8px 0' }}>
-        {['📥 Ingest', '🔍 Query', '🔧 Lint', '📋 Log'].map(f => (
-          <span key={f} style={{ padding: '6px 16px', borderRadius: 20, background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', fontSize: 13, fontWeight: 600, border: '1px solid rgba(99,102,241,0.3)' }}>{f}</span>
-        ))}
-      </div>
-      <Link href="/wiki" style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 16, textDecoration: 'none', display: 'inline-block' }}>
-        Apri Second Brain →
-      </Link>
-    </div>
-  );
-}
-
 /* ── FUNNEL ─────────────────────────────────────────────────────────────────── */
 function FunnelPanel() {
   const [product, setProduct] = useState('');
