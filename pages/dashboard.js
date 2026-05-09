@@ -32,57 +32,61 @@ async function safeJson(r) {
 
 const CATEGORIES = [
   {
-    id: 'ricerca', icon: '🔍', label: 'Ricerca',
+    id: 'builder', icon: '🏗️', label: 'Builder & Code',
+    tools: [
+      { id: 'builder', icon: '🏗️', label: 'AI Builder', link: '/builder' },
+      { id: 'terminal', icon: '🖥️', label: 'AI Terminal', link: '/terminal' },
+      { id: 'code', icon: '⚡', label: 'Genera Codice' },
+    ]
+  },
+  {
+    id: 'ricerca', icon: '🔍', label: 'Ricerca & Analisi',
     tools: [
       { id: 'search', icon: '🔍', label: 'Web Search' },
       { id: 'deep', icon: '🔬', label: 'Analisi Profonda' },
+      { id: 'competitor', icon: '🏆', label: 'Competitor AI' },
     ]
   },
   {
     id: 'ai', icon: '💬', label: 'AI Assistant',
     tools: [
       { id: 'chat', icon: '💬', label: 'Chat con Lara' },
-      { id: 'wiki', icon: '🧠', label: 'Second Brain' },
-    ]
-  },
-  {
-    id: 'sviluppo', icon: '⚡', label: 'Sviluppo',
-    tools: [
-      { id: 'code', icon: '⚡', label: 'Genera Codice' },
-    ]
-  },
-  {
-    id: 'email', icon: '📧', label: 'Email AI',
-    tools: [
-      { id: 'email', icon: '📧', label: 'Email AI' },
-    ]
-  },
-  {
-    id: 'business', icon: '💰', label: 'Business',
-    tools: [
-      { id: 'plan', icon: '📋', label: 'Piano Progetto' },
-      { id: 'money', icon: '💰', label: 'Monetizzazione' },
-      { id: 'finance', icon: '📈', label: 'Finanza & Crypto' },
+      { id: 'lara', icon: '🤖', label: 'Lara Bot', link: '/lara' },
+      { id: 'wiki', icon: '🧠', label: 'Second Brain', link: '/wiki' },
     ]
   },
   {
     id: 'studio', icon: '✨', label: 'Generative Studio',
     tools: [
-      { id: 'cinema',       icon: '🎬', label: 'Cinema Studio', link: '/cinema' },
-      { id: 'studio-image', icon: '🖼', label: 'Image AI',      link: '/studio?tab=image' },
-      { id: 'studio-video', icon: '📽', label: 'Video AI',      link: '/studio?tab=video' },
-      { id: 'studio-music', icon: '🎵', label: 'Music AI',      link: '/studio?tab=music' },
-      { id: 'studio-voice', icon: '🎙', label: 'Voice AI',      link: '/studio?tab=voice' },
+      { id: 'cinema', icon: '🎬', label: 'Cinema Studio', link: '/cinema' },
+      { id: 'studio', icon: '🎨', label: 'Creative Studio', link: '/studio' },
     ]
   },
   {
-    id: 'tools', icon: '🛠️', label: 'Strumenti Pro',
+    id: 'business', icon: '💰', label: 'Business & Sales',
     tools: [
+      { id: 'plan', icon: '📋', label: 'Business Plan' },
+      { id: 'money', icon: '💰', label: 'Monetizzazione' },
+      { id: 'finance', icon: '📈', label: 'Finanza & Crypto' },
       { id: 'funnel', icon: '🔄', label: 'Funnel Builder' },
-      { id: 'freelance', icon: '💼', label: 'Trova Lavori' },
       { id: 'contract', icon: '📝', label: 'Contratti AI' },
+    ]
+  },
+  {
+    id: 'marketing', icon: '📢', label: 'Marketing & Content',
+    tools: [
+      { id: 'email', icon: '📧', label: 'Email AI' },
       { id: 'seo', icon: '🔍', label: 'SEO Analyzer' },
-      { id: 'competitor', icon: '🏆', label: 'Competitor AI' },
+      { id: 'freelance', icon: '💼', label: 'Trova Lavori' },
+    ]
+  },
+  {
+    id: 'platform', icon: '🔗', label: 'Piattaforma',
+    tools: [
+      { id: 'skills', icon: '🎯', label: 'Skills Hub', link: '/skills' },
+      { id: 'marketplace', icon: '🤖', label: 'Marketplace', link: '/marketplace' },
+      { id: 'usage', icon: '📊', label: 'Usage Dashboard', link: '/usage' },
+      { id: 'pricing', icon: '💎', label: 'Piani & Prezzi', link: '/pricing' },
     ]
   },
 ];
@@ -245,20 +249,36 @@ export default function Dashboard() {
         </header>
 
         <div style={css.content}>
+          {/* Builder & Code */}
+          {tool === 'builder'  && <BuilderRedirectPanel />}
+          {tool === 'terminal' && <TerminalRedirectPanel />}
+          {tool === 'code'     && <CodePanel />}
+          {/* Ricerca & Analisi */}
           {tool === 'search'   && <SearchPanel deep={false} />}
           {tool === 'deep'     && <SearchPanel deep={true} />}
+          {tool === 'competitor'&& <CompetitorPanel />}
+          {/* AI Assistant */}
           {tool === 'chat'     && <ChatPanel />}
+          {tool === 'lara'     && <LaraRedirectPanel />}
           {tool === 'wiki'     && <WikiRedirectPanel />}
-          {tool === 'code'     && <CodePanel />}
-          {tool === 'email'    && <EmailPanel />}
+          {/* Generative Studio */}
+          {tool === 'cinema'   && <CinemaRedirectPanel />}
+          {tool === 'studio'   && <StudioRedirectPanel />}
+          {/* Business & Sales */}
           {tool === 'plan'     && <PlanPanel />}
           {tool === 'money'    && <MoneyPanel />}
           {tool === 'finance'  && <FinancePanel />}
-          {tool === 'funnel'    && <FunnelPanel />}
-          {tool === 'freelance' && <FreelancePanel />}
-          {tool === 'contract'  && <ContractPanel />}
-          {tool === 'seo'       && <SeoPanel />}
-          {tool === 'competitor'&& <CompetitorPanel />}
+          {tool === 'funnel'   && <FunnelPanel />}
+          {tool === 'contract' && <ContractPanel />}
+          {/* Marketing & Content */}
+          {tool === 'email'    && <EmailPanel />}
+          {tool === 'seo'      && <SeoPanel />}
+          {tool === 'freelance'&& <FreelancePanel />}
+          {/* Platform */}
+          {tool === 'skills'   && <SkillsRedirectPanel />}
+          {tool === 'marketplace' && <MarketplaceRedirectPanel />}
+          {tool === 'usage'    && <UsageRedirectPanel />}
+          {tool === 'pricing'  && <PricingRedirectPanel />}
         </div>
         </main>
 
@@ -1389,6 +1409,52 @@ function CompetitorPanel() {
           <pre style={{ whiteSpace: 'pre-wrap', color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.8, fontFamily: 'inherit', maxHeight: 700, overflowY: 'auto' }}>{result}</pre>
         </Card>
       )}
+    </div>
+  );
+}
+
+/* ── REDIRECT PANELS ─────────────────────────────────────────────────────────── */
+function BuilderRedirectPanel() {
+  return <RedirectPanel title="AI Builder" icon="🏗️" desc="Costruisci app full-stack conversando con l'AI" link="/builder" />;
+}
+function TerminalRedirectPanel() {
+  return <RedirectPanel title="AI Terminal" icon="🖥️" desc="500+ template per ogni settore. Genera ed esegui codice" link="/terminal" />;
+}
+function LaraRedirectPanel() {
+  return <RedirectPanel title="Lara Bot" icon="🤖" desc="Controlla tutto da Telegram" link="/lara" />;
+}
+function WikiRedirectPanel() {
+  return <RedirectPanel title="Second Brain" icon="🧠" desc="Carica documenti, PDF, immagini. L'AI impara dai tuoi file" link="/wiki" />;
+}
+function CinemaRedirectPanel() {
+  return <RedirectPanel title="Cinema Studio" icon="🎬" desc="Genera video cinematici con AI" link="/cinema" />;
+}
+function StudioRedirectPanel() {
+  return <RedirectPanel title="Creative Studio" icon="🎨" desc="Genera immagini, video, musica e voce con AI" link="/studio" />;
+}
+function SkillsRedirectPanel() {
+  return <RedirectPanel title="Skills Hub" icon="🎯" desc="15+ competenze AI pronte all'uso" link="/skills" />;
+}
+function MarketplaceRedirectPanel() {
+  return <RedirectPanel title="Marketplace" icon="🤖" desc="Scopri e installa agenti AI pre-configurati" link="/marketplace" />;
+}
+function UsageRedirectPanel() {
+  return <RedirectPanel title="Usage Dashboard" icon="📊" desc="Monitora crediti, token e consumi" link="/usage" />;
+}
+function PricingRedirectPanel() {
+  return <RedirectPanel title="Piani & Prezzi" icon="💎" desc="Scegli il piano perfetto per te" link="/pricing" />;
+}
+
+function RedirectPanel({ title, icon, desc, link }) {
+  const router = useRouter();
+  return (
+    <div style={{ ...css.panel, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, textAlign: 'center', gap: 20 }}>
+      <div style={{ fontSize: 64 }}>{icon}</div>
+      <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{title}</h2>
+      <p style={{ color: '#94a3b8', maxWidth: 480, lineHeight: 1.6, margin: 0 }}>{desc}</p>
+      <button onClick={() => router.push(link)} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer', display: 'inline-block' }}>
+        Apri {title} →
+      </button>
     </div>
   );
 }
