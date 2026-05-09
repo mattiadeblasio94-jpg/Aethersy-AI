@@ -15,6 +15,7 @@
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^0.24.0",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.15.1",
     "bcryptjs": "^3.0.3",
     "botid": "^1.5.11",
