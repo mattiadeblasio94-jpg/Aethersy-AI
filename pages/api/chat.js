@@ -58,6 +58,8 @@ export default async function handler(req, res) {
     const model = requestedModel || OPENROUTER_MODELS[0];
 
     try {
+      console.log('[Chat API] Calling OpenRouter with model:', model);
+
       const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -73,6 +75,8 @@ export default async function handler(req, res) {
           stream: true
         })
       });
+
+      console.log('[Chat API] OpenRouter response status:', orRes.status);
 
       if (!orRes.ok) {
         const errData = await orRes.json();
@@ -108,18 +112,21 @@ export default async function handler(req, res) {
         }
       }
 
+      // Save to memory (non-blocking, ignore errors)
       try {
         await Promise.all([
           saveMessage(sid, 'user', message),
           saveMessage(sid, 'assistant', fullReply),
         ]);
-      } catch {}
+      } catch (saveErr) {
+        console.log('[Chat API] saveMessage error (non-blocking):', saveErr.message);
+      }
 
       res.write(`data: ${JSON.stringify({ done: true, model })}\n\n`);
       res.end();
       return;
     } catch (orErr) {
-      console.log('OpenRouter failed, fallback to Groq:', orErr.message);
+      console.error('[Chat API] OpenRouter error:', orErr.message);
     }
   }
 
@@ -192,7 +199,13 @@ export default async function handler(req, res) {
   }
 
   // ── FALLBACK non-streaming ─────────────────────────────────────────────────
+  if (!GROQ_API_KEY) {
+    return res.status(500).json({ error: 'Nessun provider AI configurato' });
+  }
+
   try {
+    console.log('[Chat API] Calling Groq (non-streaming fallback)');
+
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -206,6 +219,8 @@ export default async function handler(req, res) {
       }),
     });
 
+    console.log('[Chat API] Groq response status:', groqRes.status);
+
     if (!groqRes.ok) {
       const errData = await groqRes.json();
       throw new Error(errData.error?.message || 'Groq error');
@@ -214,15 +229,19 @@ export default async function handler(req, res) {
     const groqData = await groqRes.json();
     const reply = groqData.choices?.[0]?.message?.content || '';
 
+    // Save to memory (non-blocking, ignore errors)
     try {
       await Promise.all([
         saveMessage(sid, 'user', message),
         saveMessage(sid, 'assistant', reply),
       ]);
-    } catch {}
+    } catch (saveErr) {
+      console.log('[Chat API] saveMessage error (non-blocking):', saveErr.message);
+    }
 
     return res.json({ reply, sessionId: sid, model: 'llama-3.1-8b-instant' });
   } catch (groqErr) {
+    console.error('[Chat API] Groq error:', groqErr.message);
     return res.status(500).json({ error: groqErr.message });
   }
 }
