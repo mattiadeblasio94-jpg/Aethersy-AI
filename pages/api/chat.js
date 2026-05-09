@@ -31,8 +31,12 @@ export default async function handler(req, res) {
 
   const sid = sessionId || 'web-default';
 
+  console.log('[Chat API] Request:', { message: message.substring(0, 50), sessionId: sid, streaming, model: requestedModel });
+  console.log('[Chat API] OPENROUTER_API_KEY configured:', !!OPENROUTER_API_KEY);
+  console.log('[Chat API] GROQ_API_KEY configured:', !!GROQ_API_KEY);
+
   let history = [];
-  try { history = await getHistory(sid, 20); } catch {}
+  try { history = await getHistory(sid, 20); } catch (e) { console.log('[Chat API] getHistory error:', e.message); }
 
   let wikiContext = '';
   try {
