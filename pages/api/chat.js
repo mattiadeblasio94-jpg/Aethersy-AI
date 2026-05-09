@@ -1,6 +1,7 @@
 import { saveMessage, getHistory } from '../../lib/memory';
 import { getAllPages } from '../../lib/wiki';
 import { LARA_SYSTEM_PROMPT } from '../../lib/prompts/lara';
+import fetch from 'node-fetch';
 
 export const config = { api: { bodyParser: true, responseLimit: false } };
 
