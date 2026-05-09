@@ -2,7 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverActions: true,
+    serverActions: {
+      bodySizeLimit: '2mb',
+      allowedOrigins: ['*'],
+    },
+    instrumentationHook: true,
   },
   typescript: {
     ignoreBuildErrors: true,

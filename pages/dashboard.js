@@ -324,14 +324,27 @@ function SearchPanel({ deep }) {
 }
 
 /* ── CHAT ───────────────────────────────────────────────────────────────────── */
+
+const AVAILABLE_MODELS = [
+  { id: 'openrouter:qwen/qwen-2.5-72b-instruct', label: 'Qwen 2.5 72B', provider: 'OpenRouter', desc: 'Best overall' },
+  { id: 'openrouter:meta-llama/llama-3.1-70b-instruct', label: 'Llama 3.1 70B', provider: 'OpenRouter', desc: 'Meta AI' },
+  { id: 'openrouter:mistralai/mixtral-8x22b-instruct', label: 'Mixtral 8x22B', provider: 'OpenRouter', desc: 'MoE model' },
+  { id: 'openrouter:deepseek/deepseek-chat-v3', label: 'DeepSeek V3', provider: 'OpenRouter', desc: 'Chinese LLM' },
+  { id: 'groq:llama-3.1-8b-instant', label: 'Llama 3.1 8B', provider: 'Groq', desc: 'Ultra-fast' },
+  { id: 'groq:llama-3.3-70b-versatile', label: 'Llama 3.3 70B', provider: 'Groq', desc: 'Fast 70B' },
+  { id: 'anthropic:claude-sonnet-4-20250514', label: 'Claude Sonnet 4', provider: 'Anthropic', desc: 'Anthropic best' },
+];
+
 function ChatPanel() {
   const [msgs, setMsgs] = useState([
-    { role: 'assistant', text: `Ciao! Sono Lara, il tuo AI agent di Aethersy-AI.\n\nPosso aiutarti con business, marketing, codice, finanza, SEO, strategie AI e molto altro.\nOgni conversazione può essere salvata nel tuo **Second Brain**.\n\n*"Sogna, Realizza, Guadagna."* 🚀` }
+    { role: 'assistant', text: `Ciao! Sono Lara, il tuo AI agent di Aethersy-AI Forge Pro.\n\nPosso aiutarti con business, marketing, codice, finanza, SEO, strategie AI e molto altro.\nOgni conversazione può essere salvata nel tuo **Second Brain**.\n\n*"Sogna, Realizza, Guadagna."* 🚀` }
   ]);
   const [input, setInput] = useState('');
   const [loading, setL] = useState(false);
   const [savingBrain, setSavingBrain] = useState(false);
   const [brainToast, setBrainToast] = useState('');
+  const [selectedModel, setSelectedModel] = useState('openrouter:qwen/qwen-2.5-72b-instruct');
+  const [showModelSelect, setShowModelSelect] = useState(false);
   const endRef = useRef(null);
   const sessionId = useRef(`web-${Date.now()}`);
   const streamingIdxRef = useRef(-1);
@@ -353,7 +366,12 @@ function ChatPanel() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, sessionId: sessionId.current, streaming: true }),
+        body: JSON.stringify({
+          message: userMsg,
+          sessionId: sessionId.current,
+          streaming: true,
+          model: selectedModel
+        }),
       });
 
       if (!res.ok || !res.body) {
@@ -432,21 +450,70 @@ function ChatPanel() {
   return (
     <div style={{ ...css.panel, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)', position: 'relative' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0, flexWrap: 'wrap', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>🤖</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#e2e8f0' }}>Lara — AI Agent</div>
-            <div style={{ fontSize: '0.7rem', color: '#10b981' }}>● Online · Claude Sonnet</div>
+            <div style={{ fontSize: '0.7rem', color: '#10b981' }}>● Online</div>
           </div>
         </div>
-        {msgs.length > 2 && (
-          <button style={{ ...css.btnSm, background: 'rgba(167,139,250,0.1)', borderColor: 'rgba(167,139,250,0.3)', color: '#a78bfa' }}
-            onClick={saveConversationToBrain} disabled={savingBrain}>
-            {savingBrain ? '⏳' : '🧠'} Salva nel Brain
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => setShowModelSelect(!showModelSelect)}
+            style={{ ...css.btnSm, background: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)', color: '#3b82f6', fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
+          >
+            🤖 {AVAILABLE_MODELS.find(m => m.id === selectedModel)?.label || 'Model'}
           </button>
-        )}
+          {msgs.length > 2 && (
+            <button style={{ ...css.btnSm, background: 'rgba(167,139,250,0.1)', borderColor: 'rgba(167,139,250,0.3)', color: '#a78bfa' }}
+              onClick={saveConversationToBrain} disabled={savingBrain}>
+              {savingBrain ? '⏳' : '🧠'} Salva nel Brain
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Model Selector Dropdown */}
+      {showModelSelect && (
+        <div style={{
+          position: 'absolute',
+          top: 70,
+          right: 20,
+          zIndex: 100,
+          background: 'rgba(15,23,42,0.98)',
+          border: '1px solid rgba(59,130,246,0.3)',
+          borderRadius: 12,
+          padding: '0.75rem',
+          minWidth: 280,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+        }}>
+          <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Seleziona Modello</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 300, overflowY: 'auto' }}>
+            {AVAILABLE_MODELS.map(m => (
+              <button
+                key={m.id}
+                onClick={() => { setSelectedModel(m.id); setShowModelSelect(false); }}
+                style={{
+                  background: selectedModel === m.id ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.03)',
+                  border: selectedModel === m.id ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: 8,
+                  padding: '0.5rem 0.7rem',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.8rem', color: selectedModel === m.id ? '#3b82f6' : '#e2e8f0' }}>{m.label}</span>
+                  <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{m.provider}</span>
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#475569' }}>{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.2rem', marginBottom: '0.8rem' }}>

@@ -1,4 +1,6 @@
 import Replicate from 'replicate';
+import { kv } from '@vercel/kv';
+import { uploadFile } from '../../../lib/vercel-storage';
 
 export const config = { api: { bodyParser: true } };
 
@@ -30,6 +32,11 @@ export default async function handler(req, res) {
   const fullPrompt = style ? `${prompt.trim()}, ${style}` : prompt.trim();
 
   try {
+    // Log usage in Vercel KV per analytics
+    const usageKey = `usage:cinema:${Date.now()}`;
+    await kv.incr(usageKey);
+    await kv.expire(usageKey, 86400); // 24 ore
+
     if (cfg.type === 'video') {
       let input = { prompt: fullPrompt };
 
@@ -53,6 +60,16 @@ export default async function handler(req, res) {
       }
 
       const prediction = await replicate.predictions.create({ model: cfg.id, input });
+
+      // Salva metadata in KV per polling
+      await kv.hset(`cinema:${prediction.id}`, {
+        model,
+        type: 'video',
+        prompt: fullPrompt,
+        status: prediction.status,
+        createdAt: Date.now(),
+      });
+
       return res.json({
         jobId: prediction.id,
         provider: 'replicate',
@@ -87,6 +104,16 @@ export default async function handler(req, res) {
       }
 
       const prediction = await replicate.predictions.create({ model: cfg.id, input });
+
+      // Salva metadata in KV per polling
+      await kv.hset(`cinema:${prediction.id}`, {
+        model,
+        type: 'image',
+        prompt: fullPrompt,
+        status: prediction.status,
+        createdAt: Date.now(),
+      });
+
       return res.json({
         jobId: prediction.id,
         provider: 'replicate',

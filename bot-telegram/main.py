@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Bot Telegram Aethersy-AI con AI Cloud — LARA OS
 OFFICIAL BOT MODE - Usa il token del bot ufficiale
@@ -6,6 +7,11 @@ Controllo piani Stripe e Supabase + Mailerlite Email Integration
 """
 
 import os
+import sys
+# Fix per encoding Windows
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 import sys
 import asyncio
 import json
@@ -1030,10 +1036,29 @@ async def run_bot():
     print("✅ Bot avviato in modalità OFFICIAL (non userbot)")
     print()
 
-    # Avvia polling con asyncio.run() per Python 3.14+
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    # Avvia polling con retry per timeout di rete
+    max_retries = 5
+    retry_delay = 5
+
+    for attempt in range(max_retries):
+        try:
+            print(f"🔗 Tentativo di connessione a Telegram (tentativo {attempt + 1}/{max_retries})...")
+            await application.initialize()
+            await application.start()
+            await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+            print("✅ Bot connesso a Telegram e in ascolto!")
+            break
+        except (telegram.error.TimedOut, telegram.error.NetworkError) as e:
+            if attempt < max_retries - 1:
+                print(f"⚠️ Timeout di rete, retry in {retry_delay}s... ({e})")
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print(f"❌ Errore di rete dopo {max_retries} tentativi: {e}")
+                raise
+        except Exception as e:
+            print(f"❌ Errore imprevisto: {e}")
+            raise
 
     # Mantieni il bot in esecuzione
     while True:

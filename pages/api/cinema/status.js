@@ -1,4 +1,5 @@
 import Replicate from 'replicate';
+import { kv } from '@vercel/kv';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -7,6 +8,9 @@ export default async function handler(req, res) {
   if (!jobId) return res.status(400).json({ error: 'jobId required' });
 
   try {
+    // Prima controlla cache KV per metadata
+    const cached = await kv.hgetall(`cinema:${jobId}`);
+
     // ── fal.ai ───────────────────────────────────────────────────────────────
     if (provider === 'fal') {
       if (!process.env.FAL_KEY) return res.json({ status: 'failed', error: 'FAL_KEY not set' });
@@ -34,10 +38,23 @@ export default async function handler(req, res) {
           result.url ||
           '';
 
+        // Salva in KV per analytics
+        if (cached?.model) {
+          await kv.hset(`cinema:${jobId}`, {
+            ...cached,
+            status: 'succeeded',
+            url,
+            completedAt: Date.now(),
+          });
+        }
+
         return res.json({ status: 'succeeded', url: typeof url === 'string' ? url : '' });
       }
 
       if (falStatus === 'FAILED') {
+        if (cached?.model) {
+          await kv.hset(`cinema:${jobId}`, { ...cached, status: 'failed', error: statusData.error });
+        }
         return res.json({ status: 'failed', error: statusData.error || statusData.detail || 'Generation failed' });
       }
 
@@ -54,9 +71,23 @@ export default async function handler(req, res) {
       if (pred.status === 'succeeded') {
         const raw = pred.output;
         const url = Array.isArray(raw) ? String(raw[0]) : String(raw || '');
+
+        // Salva in KV per analytics e storage metadata
+        if (cached?.model) {
+          await kv.hset(`cinema:${jobId}`, {
+            ...cached,
+            status: 'succeeded',
+            url,
+            completedAt: Date.now(),
+          });
+        }
+
         return res.json({ status: 'succeeded', url });
       }
       if (pred.status === 'failed' || pred.status === 'canceled') {
+        if (cached?.model) {
+          await kv.hset(`cinema:${jobId}`, { ...cached, status: 'failed', error: pred.error });
+        }
         return res.json({ status: 'failed', error: pred.error || 'Generation failed' });
       }
       return res.json({ status: pred.status });

@@ -62,8 +62,11 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (authed) {
-      initConfig(); // Initialize config with real env data
+      initConfig();
       loadAllData();
+      // Refresh analytics ogni 30 secondi per dati reali in tempo reale
+      const interval = setInterval(loadAnalytics, 30000);
+      return () => clearInterval(interval);
     }
   }, [authed]);
 

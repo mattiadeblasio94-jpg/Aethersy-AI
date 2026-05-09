@@ -1,28 +1,11 @@
-// OPEN SOURCE ONLY - No Anthropic
-
-// Helper function per Ollama (open source)
-async function ollamaGenerate({ prompt, system = "", model = "llama3.1:8b", options = {} }) {
-  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-  try {
-    const res = await fetch(`${ollamaBaseUrl}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, prompt, system, stream: false, options: { temperature: 0.7, num_predict: 2048, ...options } })
-    });
-    if (!res.ok) throw new Error(`Ollama error: ${res.status}`);
-    const data = await res.json();
-    return { content: [{ text: data.response || "" }] };
-  } catch (e) {
-    console.log("Ollama error:", e.message);
-    return { content: [{ text: "AI non disponibile" }] };
-  }
-}
+// OPEN SOURCE ONLY - OpenRouter + Groq
 
 import { Redis } from '@upstash/redis';
 
 export const config = { api: { bodyParser: true } };
 
-const client = null;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 // System prompt for autonomous terminal copilot
 const TERMINAL_COPILOT_SYSTEM = `Sei il copilota AI del terminale Aethersy AI Forge Pro.
@@ -82,50 +65,85 @@ async function verifyAdmin(telegramId) {
   return allowed.includes(String(telegramId));
 }
 
-// Execute terminal action with AI copilot
+// Execute terminal action with AI copilot using OpenRouter
 async function executeWithCopilot(instruction, context = {}) {
   const messages = [
-    {
-      role: 'user',
-      content: `ISTRUZIONE: ${instruction}
+    { role: 'system', content: TERMINAL_COPILOT_SYSTEM },
+    { role: 'user', content: `ISTRUZIONE: ${instruction}
 
 CONTESTO:
 - Language: ${context.language || 'javascript'}
 - Mode: ${context.mode || 'generate'}
 - Project: ${context.project || 'aiforge-pro'}
 
-Esegui l'operazione in modo autonomo.`
-    }
+Esegui l'operazione in modo autonomo.` }
   ];
 
-  const stream = await client.messages.stream({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 8000,
-    system: TERMINAL_COPILOT_SYSTEM,
-    messages,
-  });
-
-  let fullResponse = '';
-  let tokens = 0;
-
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-      fullResponse += event.delta.text;
+  // Try OpenRouter first
+  if (OPENROUTER_API_KEY) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://aethersy.com',
+          'X-Title': 'Aethersy AI Forge'
+        },
+        body: JSON.stringify({
+          model: 'qwen/qwen-2.5-72b-instruct',
+          messages,
+          max_tokens: 8000
+        })
+      });
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content || '';
+      return {
+        response: content,
+        commands: extractCommands(content),
+        code: extractCode(content),
+        tokens: data.usage?.total_tokens || 0,
+        executedAt: Date.now(),
+      };
+    } catch (e) {
+      console.error('[Terminal Lara] OpenRouter error:', e.message);
     }
   }
 
-  const final = await stream.finalMessage();
-  tokens = final.usage?.output_tokens || 0;
-
-  // Parse response for commands and code
-  const commands = extractCommands(fullResponse);
-  const code = extractCode(fullResponse);
+  // Fallback to Groq
+  if (GROQ_API_KEY) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages,
+          max_tokens: 8000
+        })
+      });
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content || '';
+      return {
+        response: content,
+        commands: extractCommands(content),
+        code: extractCode(content),
+        tokens: data.usage?.total_tokens || 0,
+        executedAt: Date.now(),
+      };
+    } catch (e) {
+      console.error('[Terminal Lara] Groq error:', e.message);
+    }
+  }
 
   return {
-    response: fullResponse,
-    commands,
-    code,
-    tokens,
+    response: 'AI non disponibile - configura OPENROUTER_API_KEY o GROQ_API_KEY',
+    commands: [],
+    code: [],
+    tokens: 0,
     executedAt: Date.now(),
   };
 }
