@@ -1414,6 +1414,20 @@ function CompetitorPanel() {
 }
 
 /* ── REDIRECT PANELS ─────────────────────────────────────────────────────────── */
+function RedirectPanel({ title, icon, desc, link }) {
+  const router = useRouter();
+  return (
+    <div style={{ ...css.panel, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, textAlign: 'center', gap: 20 }}>
+      <div style={{ fontSize: 64 }}>{icon}</div>
+      <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{title}</h2>
+      <p style={{ color: '#94a3b8', maxWidth: 480, lineHeight: 1.6, margin: 0 }}>{desc}</p>
+      <button onClick={() => router.push(link)} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer', display: 'inline-block' }}>
+        Apri {title} →
+      </button>
+    </div>
+  );
+}
+
 function BuilderRedirectPanel() {
   return <RedirectPanel title="AI Builder" icon="🏗️" desc="Costruisci app full-stack conversando con l'AI" link="/builder" />;
 }
@@ -1443,20 +1457,6 @@ function UsageRedirectPanel() {
 }
 function PricingRedirectPanel() {
   return <RedirectPanel title="Piani & Prezzi" icon="💎" desc="Scegli il piano perfetto per te" link="/pricing" />;
-}
-
-function RedirectPanel({ title, icon, desc, link }) {
-  const router = useRouter();
-  return (
-    <div style={{ ...css.panel, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, textAlign: 'center', gap: 20 }}>
-      <div style={{ fontSize: 64 }}>{icon}</div>
-      <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{title}</h2>
-      <p style={{ color: '#94a3b8', maxWidth: 480, lineHeight: 1.6, margin: 0 }}>{desc}</p>
-      <button onClick={() => router.push(link)} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer', display: 'inline-block' }}>
-        Apri {title} →
-      </button>
-    </div>
-  );
 }
 
 /* ── SHARED ─────────────────────────────────────────────────────────────────── */
