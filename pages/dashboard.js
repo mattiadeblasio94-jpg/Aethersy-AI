@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import LiveAnalytics from '../components/LiveAnalytics';
 
-const BOT_URL = 'https://t.me/Lara_Aethersy_Bot';
+const BOT_URL = 'https://t.me/Lara_Aethersy_AI_bot';
 const BOT_NAME = 'Lara AGENTE AI Aethersy';
 const OPENCLAW_URL = 'http://47.87.134.105:3000'; // OpenClaw Gateway su Alibaba ECS
 const OPENCLAW_LOCAL_URL = 'http://127.0.0.1:18789'; // OpenClaw SSH tunnel locale
@@ -1438,7 +1438,7 @@ function TelegramLink({ email }) {
       // Get Telegram ID from localStorage (set by user via /start command)
       const tgId = localStorage.getItem('telegram_id');
       if (!tgId) {
-        setLinkStatus({ linked: false, message: 'Apri Telegram e invia /start a @Lara_Aethersy_Bot per ottenere il tuo ID' });
+        setLinkStatus({ linked: false, message: 'Apri Telegram e invia /start a @Lara_Aethersy_AI_bot per ottenere il tuo ID' });
         return;
       }
 
@@ -1461,7 +1461,7 @@ function TelegramLink({ email }) {
     setLoading(true);
     const tgId = localStorage.getItem('telegram_id');
     if (!tgId) {
-      alert('Prima ottieni il tuo ID Telegram inviando /start a @Lara_Aethersy_Bot');
+      alert('Prima ottieni il tuo ID Telegram inviando /start a @Lara_Aethersy_AI_bot');
       setLoading(false);
       return;
     }

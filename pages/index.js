@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
-const BOT_USERNAME = 'Lara_Aethersy_Bot';
+const BOT_USERNAME = 'Lara_Aethersy_AI_bot';
 const BOT_URL = `https://t.me/${BOT_USERNAME}`;
 const OPENCLAW_URL = 'http://47.87.134.105:3000';
 
