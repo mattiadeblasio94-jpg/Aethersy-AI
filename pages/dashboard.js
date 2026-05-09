@@ -97,7 +97,9 @@ export default function Dashboard() {
   const router = useRouter();
   const [tool, setTool] = useState('chat');
   const [user, setUser] = useState(null);
-  const [openCats, setOpenCats] = useState({ ricerca: true, ai: true, sviluppo: true, email: true, business: true, tools: true });
+  const [openCats, setOpenCats] = useState({
+    builder: true, ricerca: true, ai: true, studio: true, business: true, marketing: true, platform: true
+  });
   const [sideOpen, setSide] = useState(true);
 
   useEffect(() => {
@@ -249,6 +251,8 @@ export default function Dashboard() {
         </header>
 
         <div style={css.content}>
+          {/* Default Welcome Panel */}
+          {!tool && <WelcomePanel />}
           {/* Builder & Code */}
           {tool === 'builder'  && <BuilderRedirectPanel />}
           {tool === 'terminal' && <TerminalRedirectPanel />}
@@ -1403,6 +1407,46 @@ function RedirectPanel({ title, icon, desc, link }) {
       <button onClick={() => router.push(link)} style={{ padding: '14px 40px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer', display: 'inline-block' }}>
         Apri {title} →
       </button>
+    </div>
+  );
+}
+
+function WelcomePanel() {
+  const router = useRouter();
+  return (
+    <div style={{ ...css.panel, textAlign: 'center', padding: '3rem 2rem' }}>
+      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚀</div>
+      <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Benvenuto in Aethersy-AI</h1>
+      <p style={{ color: '#94a3b8', fontSize: '1.1rem', maxWidth: 600, margin: '0 auto 2rem', lineHeight: 1.8 }}>
+        La tua piattaforma AI completa con 20+ strumenti per business, marketing, sviluppo e creatività.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', maxWidth: 800, margin: '0 auto' }}>
+        {[
+          { icon: '🏗️', title: 'AI Builder', desc: 'Costruisci app', link: '/builder' },
+          { icon: '💬', title: 'Chat AI', desc: 'Parla con Lara', link: '/dashboard?tool=chat' },
+          { icon: '🎬', title: 'Cinema', desc: 'Genera video', link: '/cinema' },
+          { icon: '🎯', title: 'Skills', desc: '15+ competenze', link: '/skills' },
+          { icon: '🤖', title: 'Marketplace', desc: 'Agenti AI', link: '/marketplace' },
+          { icon: '📊', title: 'Usage', desc: 'Monitora crediti', link: '/usage' },
+        ].map(item => (
+          <button
+            key={item.title}
+            onClick={() => router.push(item.link)}
+            style={{
+              padding: '1.5rem',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 16,
+              cursor: 'pointer',
+              transition: 'all 0.3s'
+            }}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{item.icon}</div>
+            <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{item.title}</div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.desc}</div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
