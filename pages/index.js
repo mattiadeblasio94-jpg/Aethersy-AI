@@ -153,7 +153,7 @@ export default function Home() {
 
   async function handleCheckout(plan) {
     if (plan.id === 'free') { setTab('register'); setModal(true); return; }
-    if (plan.id === 'enterprise') { window.location.href = 'mailto:mattiadeblasio94@gmail.com?subject=Enterprise%20Aethersy-AI'; return; }
+    if (plan.id === 'enterprise') { window.location.href = 'mailto:aethersyai@gmail.com?subject=Enterprise%20Aethersy-AI'; return; }
     if (!user) { setTab('register'); setModal(true); return; }
     setCheckoutLoading(plan.id);
     try {
@@ -563,7 +563,7 @@ export default function Home() {
         </div>
         <div style={{ maxWidth: 1200, margin: '2rem auto 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <span>© 2025 Aethersy-AI · Lara AGENTE AI Aethersy</span>
-          <span>P.IVA / CF su richiesta · <a href="mailto:mattiadeblasio94@gmail.com" style={{ color: '#475569' }}>mattiadeblasio94@gmail.com</a></span>
+          <span>P.IVA / CF su richiesta · <a href="mailto:aethersyai@gmail.com" style={{ color: '#475569' }}>aethersyai@gmail.com</a></span>
         </div>
       </footer>
 

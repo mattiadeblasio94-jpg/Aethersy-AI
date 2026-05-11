@@ -100,7 +100,7 @@ const PLANS = [
     ],
     limits: [],
     cta: 'Contattaci',
-    ctaHref: 'mailto:mattiadeblasio94@gmail.com?subject=Aethersy-AI Enterprise',
+    ctaHref: 'mailto:aethersyai@gmail.com?subject=Aethersy-AI Enterprise',
   },
 ];
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
-const ADMIN_EMAIL = 'mattiadeblasio94@gmail.com';
+const ADMIN_EMAIL = 'aethersyai@gmail.com';
 const STRIPE_URL = '/api/stripe-webhook';
 
 async function safeJson(r) {

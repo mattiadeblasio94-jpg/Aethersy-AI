@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
   // Enterprise: redirect to email
   if (plan === 'enterprise') {
-    return res.status(200).json({ url: 'mailto:mattiadeblasio94@gmail.com?subject=Enterprise%20Aethersy-AI' });
+    return res.status(200).json({ url: 'mailto:aethersyai@gmail.com?subject=Enterprise%20Aethersy-AI' });
   }
 
   // Get price ID from env config

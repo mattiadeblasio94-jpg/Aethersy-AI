@@ -115,7 +115,7 @@ export default function Dashboard() {
   }
 
   const current = ALL_TOOLS.find(t => t.id === tool) || ALL_TOOLS[0];
-  const isAdmin = user?.email === 'mattiadeblasio94@gmail.com';
+  const isAdmin = user?.email === 'aethersyai@gmail.com';
 
   return (
     <div style={css.root}>
