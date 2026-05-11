@@ -1770,9 +1770,25 @@ function getPlanBadgeColor(plan) {
 // ============================================
 // SETTINGS DROPDOWN WITH LANGUAGE & USER CONTROL
 // ============================================
+const TRANSLATIONS = {
+  it: { settings: '⚙️ Impostazioni', language: '🌍 Lingua', user: '👤 Utente', admin: '🔑 Pannello Admin', logout: '🚪 Logout' },
+  en: { settings: '⚙️ Settings', language: '🌍 Language', user: '👤 User', admin: '🔑 Admin Panel', logout: '🚪 Logout' },
+  es: { settings: '⚙️ Ajustes', language: '🌍 Idioma', user: '👤 Usuario', admin: '🔑 Panel Admin', logout: '🚪 Cerrar sesión' },
+  fr: { settings: '⚙️ Paramètres', language: '🌍 Langue', user: '👤 Utilisateur', admin: '🔑 Panel Admin', logout: '🚪 Déconnexion' },
+  de: { settings: '⚙️ Einstellungen', language: '🌍 Sprache', user: '👤 Benutzer', admin: '🔑 Admin Panel', logout: '🚪 Abmelden' },
+  pt: { settings: '⚙️ Configurações', language: '🌍 Idioma', user: '👤 Usuário', admin: '🔑 Painel Admin', logout: '🚪 Sair' },
+  zh: { settings: '⚙️ 设置', language: '🌍 语言', user: '👤 用户', admin: '🔑 管理面板', logout: '🚪 登出' },
+  ja: { settings: '⚙️ 設定', language: '🌍 言語', user: '👤 ユーザー', admin: '🔑 管理パネル', logout: '🚪 ログアウト' },
+};
+
 function SettingsDropdown({ user }) {
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState('it');
+  const [lang, setLang] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('aiforge_lang') || 'it';
+    }
+    return 'it';
+  });
 
   const languages = [
     { code: 'it', label: '🇮🇹 Italiano' },
@@ -1791,13 +1807,23 @@ function SettingsDropdown({ user }) {
     window.location.href = '/';
   }
 
+  function handleLangChange(newLang) {
+    setLang(newLang);
+    localStorage.setItem('aiforge_lang', newLang);
+    setOpen(false);
+    // Force reload to apply language
+    window.location.reload();
+  }
+
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.it;
+
   return (
     <div style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(!open)}
         style={{ ...css.toolbarBtn('#64748b'), background: open ? 'rgba(100,116,139,0.2)' : '' }}
       >
-        <span>⚙️</span> <span>Impostazioni</span>
+        <span>⚙️</span> <span>{t.settings.replace('⚙️ ', '')}</span>
       </button>
 
       {open && (
@@ -1816,12 +1842,12 @@ function SettingsDropdown({ user }) {
         }}>
           {/* Language Selector */}
           <div style={{ marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>🌍 Lingua</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>{t.language}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
               {languages.map(l => (
                 <button
                   key={l.code}
-                  onClick={() => { setLang(l.code); setOpen(false); }}
+                  onClick={() => handleLangChange(l.code)}
                   style={{
                     background: lang === l.code ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
                     border: lang === l.code ? '1px solid #7c3aed' : '1px solid rgba(255,255,255,0.05)',

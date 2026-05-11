@@ -170,7 +170,7 @@ node bridge.js &
 - Dashboard: http://47.87.141.154:3000
 - Terminal: http://47.87.141.154:3000/terminal
 - Marketplace: http://47.87.141.154:3000/marketplace
-- Telegram Bot: https://t.me/Lara_Aethersy_Bot
+- Telegram Bot: https://t.me/Lara_Aethersy_AI_bot
 
 ---
 
