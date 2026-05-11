@@ -10,20 +10,6 @@ const BOT_NAME = 'Lara AGENTE AI Aethersy';
 const OPENCLAW_URL = 'http://47.87.134.105:3000'; // OpenClaw Gateway su Alibaba ECS
 const OPENCLAW_LOCAL_URL = 'http://127.0.0.1:18789'; // OpenClaw SSH tunnel locale
 
-// Social Media Links
-const SOCIAL_LINKS = [
-  { id: 'instagram', label: 'Instagram', icon: '📸', url: 'https://instagram.com' },
-  { id: 'facebook', label: 'Facebook', icon: '📘', url: 'https://facebook.com' },
-  { id: 'tiktok', label: 'TikTok', icon: '🎵', url: 'https://tiktok.com' },
-  { id: 'linkedin', label: 'LinkedIn', icon: '💼', url: 'https://linkedin.com' },
-  { id: 'twitter', label: 'X/Twitter', icon: '🐦', url: 'https://twitter.com' },
-  { id: 'reddit', label: 'Reddit', icon: '🤖', url: 'https://reddit.com' },
-  { id: 'youtube', label: 'YouTube', icon: '📺', url: 'https://youtube.com' },
-  { id: 'pinterest', label: 'Pinterest', icon: '📌', url: 'https://pinterest.com' },
-  { id: 'snapchat', label: 'Snapchat', icon: '👻', url: 'https://snapchat.com' },
-  { id: 'twitch', label: 'Twitch', icon: '🎮', url: 'https://twitch.tv' },
-];
-
 async function safeJson(r) {
   const t = await r.text();
   try { return JSON.parse(t); }
@@ -218,15 +204,6 @@ export default function Dashboard() {
             <a href={OPENCLAW_URL} target="_blank" rel="noopener noreferrer" style={css.toolbarBtn('#3b82f6')}>
               <span>🔧</span> <span>OpenClaw</span>
             </a>
-            <div style={css.toolbarDivider}></div>
-            {/* Social Media Scroll */}
-            <div style={css.socialScroll}>
-              {SOCIAL_LINKS.map(social => (
-                <a key={social.id} href={social.url} target="_blank" rel="noopener noreferrer" style={css.socialBtn} title={social.label}>
-                  {social.icon}
-                </a>
-              ))}
-            </div>
           </div>
           <div style={css.toolbarSection}>
             <SettingsDropdown user={user} />
@@ -1996,31 +1973,6 @@ const css = {
     width: '1px',
     height: '24px',
     background: 'rgba(255,255,255,0.1)'
-  },
-  socialScroll: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.4rem',
-    overflowX: 'auto',
-    scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(124,58,237,0.3) transparent',
-    maxWidth: '400px',
-    padding: '0.25rem'
-  },
-  socialBtn: {
-    fontSize: '1.2rem',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 8,
-    padding: '0.35rem',
-    cursor: 'pointer',
-    textDecoration: 'none',
-    transition: 'all 0.2s',
-    flexShrink: 0,
-    ':hover': {
-      background: 'rgba(124,58,237,0.2)',
-      borderColor: 'rgba(124,58,237,0.4)'
-    }
   }
 };
 
