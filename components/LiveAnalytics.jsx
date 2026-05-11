@@ -67,74 +67,89 @@ function AgentLog({ agent, message, time, type = 'info' }) {
 
 export default function LiveAnalytics() {
   const [stats, setStats] = useState({
-    aiPeople: 12842,
+    aiPeople: 0,
     activeUsers: 0,
     apiCalls: 0,
-    gpuLoad: 65,
-    stripeBalance: 12450,
+    gpuLoad: 0,
+    stripeBalance: 0,
+    mrr: 0,
   })
-  const [logs, setLogs] = useState([
-    { agent: 'OpenClaw', msg: 'Scanning profitable niches...', time: '2m ago', type: 'action' },
-    { agent: 'Lara', msg: 'Closing deal on Telegram', time: '5m ago', type: 'success' },
-    { agent: 'System', msg: 'New API Key registered', time: '12m ago', type: 'info' },
-  ])
-  const [ecsStatus, setEcsStatus] = useState('active') // active, sleeping, error
+  const [logs, setLogs] = useState([])
+  const [ecsStatus, setEcsStatus] = useState('active')
 
-  // Fetch dati reali ogni 5 secondi
+  // Fetch REAL data every 3 seconds
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchRealStats() {
       try {
-        const res = await fetch('/api/health')
-        if (res.ok) {
-          const data = await res.json()
+        // Health check for API calls count
+        const healthRes = await fetch('/api/health')
+        if (healthRes.ok) {
+          const healthData = await healthRes.json()
+          // Extract from services status
+        }
+
+        // Admin stats API - REAL data
+        const adminRes = await fetch('/api/admin/stats')
+        if (adminRes.ok) {
+          const data = await adminRes.json()
           setStats(prev => ({
             ...prev,
-            activeUsers: data.activeUsers || prev.activeUsers,
-            apiCalls: data.apiCalls || prev.apiCalls,
+            activeUsers: data.stats?.activeSessions || 0,
+            apiCalls: data.stats?.totalApiCalls || 0,
+            aiPeople: data.stats?.totalUsers || 0,
+            mrr: data.stats?.mrr || 0,
           }))
         }
 
-        // Stats da admin API
-        const adminRes = await fetch('/api/admin?endpoint=stats', {
-          headers: { 'Authorization': 'Bearer admin-token' }
-        })
-        if (adminRes.ok) {
-          const data = await adminRes.json()
-          if (data.stats) {
+        // Telegram stats from /api/telegram (tracks all users)
+        try {
+          const tgRes = await fetch('/api/telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'stats' })
+          })
+          if (tgRes.ok) {
+            const tgData = await tgRes.json()
             setStats(prev => ({
               ...prev,
-              activeUsers: data.stats.activeSessions || prev.activeUsers,
+              aiPeople: tgData.totalUsers || prev.aiPeople,
             }))
           }
-        }
+        } catch {}
+
       } catch (e) {
         console.error('Stats fetch error:', e)
       }
     }
 
-    fetchStats()
-    const interval = setInterval(fetchStats, 5000)
+    fetchRealStats()
+    const interval = setInterval(fetchRealStats, 3000)
     return () => clearInterval(interval)
   }, [])
 
-  // Simulazione logs in tempo reale
+  // Fetch REAL logs from system
   useEffect(() => {
-    const messages = [
-      { agent: 'Lara', msg: 'Analyzing user request...', type: 'info' },
-      { agent: 'OpenClaw', msg: 'Gateway connection active', type: 'success' },
-      { agent: 'Cinema', msg: 'Rendering video frame #482', type: 'action' },
-      { agent: 'Stripe', msg: 'Payment webhook received', type: 'success' },
-      { agent: 'Qwen', msg: 'Generating response...', type: 'info' },
-    ]
+    async function fetchLogs() {
+      try {
+        const res = await fetch('/api/logs')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.logs?.length > 0) {
+            setLogs(data.logs.slice(0, 10).map(log => ({
+              agent: log.agent || 'System',
+              msg: log.message || log.msg || 'Event',
+              time: log.time || 'now',
+              type: log.type || 'info'
+            })))
+          }
+        }
+      } catch (e) {
+        // Silent fail, keep showing last known logs
+      }
+    }
 
-    const interval = setInterval(() => {
-      const randomMsg = messages[Math.floor(Math.random() * messages.length)]
-      setLogs(prev => [{
-        ...randomMsg,
-        time: 'now',
-      }, ...prev.slice(0, 9)])
-    }, 8000)
-
+    fetchLogs()
+    const interval = setInterval(fetchLogs, 5000)
     return () => clearInterval(interval)
   }, [])
 
